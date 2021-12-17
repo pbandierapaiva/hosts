@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<title>Hosts</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<body>
+
+
+<div class="w3-container">
+  <h2>Lista de servidores (hosts)</h2>
+
+
+{% if lista_h %}
+    {% for h in lista_h %}
+      	<div class="w3-panel w3-card"  style="width:50%;"><h3>{{ h.nome }}</h3></div>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No polls are available.</p>
+{% endif %}
+
