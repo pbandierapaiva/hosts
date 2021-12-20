@@ -1,7 +1,7 @@
 from django.db import models
 
 class Host(models.Model):
-    nome = models.CharField(max_length=100)
+    nome = models.CharField(primary_key=True, max_length=100)
     net_mgmt = models.CharField(max_length=15, default="", blank=True)
     net_164 = models.CharField(max_length=15, default="", blank=True)
     net_162 = models.CharField(max_length=15, default="", blank=True)

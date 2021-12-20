@@ -5,7 +5,7 @@ from django.template import loader
 from .models import Host
 
 def index(request):
-    return HttpResponse("Hello, world. You're at the polls index.")
+    return HttpResponse("Index.")
     
 
 def hosts(request, host_id=None):
@@ -24,7 +24,12 @@ def hosts(request, host_id=None):
 		if len(listah)==0: return HttpResponse("Sem Hosts")
 		output = ', '.join([ h.nome for h in listah])
 		return HttpResponse("Hosts: "+ output)
-	
+	else:
+		try:
+			h = Host.objects.get(nome=host_id)
+		except:
+			raise Http404("Host não existe.")
+
 	return HttpResponse("Host "+str(host_id))
 	
 

@@ -5,7 +5,7 @@ from . import views
 urlpatterns = [
 	path('', views.index, name='index'),
 	path('host/', views.hosts, name='hosts-d'),
-	path('host/<int:host_id>', views.hosts, name='detail'),
+	path('host/<str:host_id>', views.hosts, name='detail'),
 
 
 
