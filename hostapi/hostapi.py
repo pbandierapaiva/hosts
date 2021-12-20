@@ -43,9 +43,14 @@ async def host():
 	
 	d = []
 	for li in tudo:
-		db.cursor.execute("Select rede,ip from netdev where maq='"+str(li[0])+"'")
-		redes = dict ( db.cursor.fetchall() )
-		d.append({'id':li[0],'nome':li[1],'estado':li[2], 'tipo':li[3], 'net':redes})
+		db.cursor.execute("Select rede,ip from netdev where maq='"+str(li['id'])+"'")
+		interfaces = db.cursor.fetchall()
+		 
+		li['redes'] = {}
+		for iface in interfaces:
+			li['redes'][iface["rede"]]=iface["ip"]
+		d.append(li)
+		#d.append({'id':li['id'],'nome':li['nome'],'estado':li[2], 'tipo':li[3], 'net':redes})
 	return JSONResponse(content=jsonable_encoder(d))
 
 

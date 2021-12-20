@@ -21,9 +21,9 @@ function onLoadHosts(){
     	
     	ipmi = document.createElement("a")
     	ipmi.className = "w3-button w3-tiny w3-border w3-round-large w3-right"
-    	ipmi.href = "http://"+i.net.ipmi
+    	ipmi.href = "http://"+i.redes.ipmi
     	ipmi.target="_blank"
-    	ipmi.innerHTML = i.net.ipmi
+    	ipmi.innerHTML = i.redes.ipmi
 
 
     	estadoHost.className="w3-badge w3-right w3-margin-right "
