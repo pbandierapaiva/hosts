@@ -16,29 +16,28 @@ function onLoadHosts(){
     for (i of JSON.parse(this.responseText)) {
     	item = document.createElement("a")
     	item.className="w3-bar-item w3-button"
-    	//celula = document.createElement("div")
     	estadoHost = document.createElement("span")
     	estadoHost.innerHTML = "&nbsp;"
-    	//nomehost = document.createElement("a")
-    	//nomehost.className = "w3-button w3-black"
-    	item.href = "http://"+i.ip
-    	item.target="#infoarea"
-    	item.innerHTML = i.nome
-      	if( i.estado==0 ) {
-    		estadoHost.className="w3-badge w3-right w3-margin-right w3-grey"
-    		}
+    	
+    	ipmi = document.createElement("a")
+    	ipmi.className = "w3-button w3-tiny w3-border w3-round-large w3-right"
+    	ipmi.href = "http://"+i.net.ipmi
+    	ipmi.target="_blank"
+    	ipmi.innerHTML = i.net.ipmi
+
+
+    	estadoHost.className="w3-badge w3-right w3-margin-right "
+      	if( i.estado==0 ) estadoHost.className+="w3-grey"
     	else {
-    		if(i.estado==1) {
-    			estadoHost.className="w3-badge w3-right w3-margin-right w3-green"
-    			}
-    		else {
-    			estadoHost.className="w3-badge w3-right w3-margin-right w3-yellow"
-    			}
+    		if(i.estado==1) estadoHost.className+="w3-green"
+    		else estadoHost.className+="w3-yellow"
     		}
-    	item.appendChild(estadoHost)
-    	//item.appendChild(nomehost)         //document.createTextNode(i.nome))
-    	//item.innerHTML =  i.nome 
-    	//li.appendChild ( item )
+    	item.innerHTML = i.nome    		
+	item.href = '/hosts/'+i.id
+	item.target='infoarea'
+    	item.appendChild(estadoHost)    		
+    	item.appendChild(ipmi)
+
     	document.getElementById("listahost").appendChild(item)
     }
   }
