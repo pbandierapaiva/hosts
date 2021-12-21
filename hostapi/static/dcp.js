@@ -14,29 +14,58 @@ function onLoadHosts(){
 
     
     for (i of JSON.parse(this.responseText)) {
-    	item = document.createElement("a")
-    	item.className="w3-bar-item w3-button"
-    	estadoHost = document.createElement("span")
-    	estadoHost.innerHTML = "&nbsp;"
-    	
+   	
+   	barraStatus = document.createElement("div")
+   	barraStatus.className = "w3-bar"
+   	
     	ipmi = document.createElement("a")
-    	ipmi.className = "w3-button w3-tiny w3-border w3-round-large w3-right"
+    	ipmi.className = "w3-button w3-tiny w3-border w3-round "
+    	ipmi.style = "width:30%"
     	ipmi.href = "http://"+i.redes.ipmi
     	ipmi.target="_blank"
     	ipmi.innerHTML = i.redes.ipmi
-
-
-    	estadoHost.className="w3-badge w3-right w3-margin-right "
+    	
+    	tipo = document.createElement("a")
+    	tipo.className = "w3-button w3-tiny w3-border w3-center w3-round "
+    	tipo.style = "width:10%"
+	switch( i.tipo ){
+		case "H":
+			tipo.innerHTML = "VM"
+			tipo.className += "w3-blue"
+			break;
+		case "S":
+			tipo.innerHTML = "ST"
+			tipo.className += "w3-teal"
+			break;
+		default:
+			tipo.innerHTML = "??"
+			break;
+		}
+			
+    	estadoHost = document.createElement("span")
+    	estadoHost.innerHTML = "&nbsp;"
+    	estadoHost.className="w3-button w3-tiny w3-border w3-round "
+    	estadoHost.style = "width:3%"
       	if( i.estado==0 ) estadoHost.className+="w3-grey"
     	else {
     		if(i.estado==1) estadoHost.className+="w3-green"
     		else estadoHost.className+="w3-yellow"
     		}
-    	item.innerHTML = i.nome    		
+    	nomeHost = document.createElement("span")
+    	nomeHost.innerHTML = i.nome  
+    	nomeHost.className="w3-button w3-tiny w3-border w3-round "
+    	nomeHost.style = "width:40%"
+
+    	barraStatus.appendChild(nomeHost)
+    	barraStatus.appendChild(ipmi)
+    	barraStatus.appendChild(tipo)
+	barraStatus.appendChild(estadoHost)
+    	
+    	item = document.createElement("a")
+    	item.className="w3-bar-item w3-button"		
 	item.href = '/hosts/'+i.id
 	item.target='infoarea'
-    	item.appendChild(estadoHost)    		
-    	item.appendChild(ipmi)
+    	item.appendChild(barraStatus)
 
     	document.getElementById("listahost").appendChild(item)
     }
