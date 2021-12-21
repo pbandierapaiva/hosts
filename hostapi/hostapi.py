@@ -28,8 +28,19 @@ async def host(hostid):
 	db = DB()
 	
 	db.cursor.execute("Select * from maq where id='"+hostid+"'")
-	tudo = db.cursor.fetchall()
-	return JSONResponse(content=jsonable_encoder(tudo))
+	h = db.cursor.fetchone()
+	
+	if not h:
+		return None
+		
+	db.cursor.execute("Select rede,ip from netdev where maq='"+str(h['id'])+"'")
+	interfaces = db.cursor.fetchall()
+	 
+	h['redes'] = {}
+	for iface in interfaces:
+		h['redes'][iface["rede"]]=iface["ip"]
+	
+	return JSONResponse(content=jsonable_encoder(h))
 
 @app.get("/hosts")
 async def host():
