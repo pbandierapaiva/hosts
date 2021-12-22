@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+
+
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.encoders import jsonable_encoder
@@ -10,7 +12,10 @@ from conexao import conexao
 
 
 app = FastAPI()
+
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/web", StaticFiles(directory="web"), name="web")
 
 class DB:
 	def __init__(self):
