@@ -5,13 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
 
-<script src="/static/dcp.js"></script>
+<script type="text/javascript" src="brython/www/src/brython.min.js">
 
 </head>
-<body  onload="carregaHosts()" >
+<body  onload="brython()" >
+<script type="text/python" src=hostapp.py></script>
 
 <div  id="listahost" class="w3-sidebar w3-light-grey w3-bar-block" style="width:25%">
-  <h3 class="w3-bar-item">Hosts <span class="w3-tiny">usando Javascript</span></h3>
+  <h3 class="w3-bar-item">Hosts <span class="w3-tiny">usando Brython</span></h3>
 </div>
 <div style="margin-left:25%">
 

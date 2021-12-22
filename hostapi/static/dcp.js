@@ -78,13 +78,13 @@ function hostinfo(ev) {
 function onInfoHostLoaded(){
 	campos = JSON.parse(this.responseText)
 	
-	alert(this.responseText)
+	// alert(this.responseText)
 	
 	tit = document.getElementById("hititle")
 	tit.innerHTML = "Host info: "+campos["nome"]
 
 	area = document.getElementById("infoarea")
-	area.innerHTML = campos.nome
+	area.innerHTML = ""  // remove tudo da área antes de preencher
 	
    	form = document.createElement("form")
     	form.className = "w3-container"
@@ -150,15 +150,34 @@ function onInfoHostLoaded(){
    	form.appendChild(cpokern)
    	   	
    	tipo = document.createElement("div")
-   	tipo.className = "w3-tag"
-   	tipo.innerHTML = campos["tipo"]
+   	tipo.className = "w3-tag w3-margin w3-padding "
+   	tipo.style = "width:200px"
+   	switch( campos["tipo"] ) {
+   	case "H":  // HOST
+    		tipo.innerHTML = "Host"
+    		tipo.className+= "w3-green" 
+   		break
+   	case "S":  // Standalone
+   		tipo.innerHTML = "Standalone"
+    		tipo.className+= "w3-teal"
+   		break
+   	case "V":  // Máq. virtual
+   		tipo.innerHTML = "VM"   		
+    		tipo.className+= "w3-blue"
+   		break
+   	case "U":  // Desconhecido
+     		tipo.innerHTML = "desconhecido"
+    		tipo.className+= "w3-grey"
+   		break
+   		}
+   	//tipo.innerHTML = campos["tipo"]
    	form.appendChild(tipo)
    	
-   	redes = document.createElement("p")
-   	
+   	redes = document.createElement("p") 
+   	redes.innerHTML = "<label>Interfaces: </label>"
    	for (const key of Object.keys( campos["redes"] )) {
    		tag = document.createElement("div")
-   		tag.className = "w3-tag "
+   		tag.className = "w3-tag w3-margin "
    		tag.style ="width:120px"
    		tag.innerHTML = campos["redes"][key]
    		switch( key ) {

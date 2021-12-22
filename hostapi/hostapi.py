@@ -49,7 +49,7 @@ async def host():
 	#db.cursor.execute(
 	#	"Select maq.id,maq.nome, maq.estado,maq.tipo, netdev.ip   \
 	#		from maq,netdev where netdev.maq=maq.id and netdev.rede='ipmi'")
-	db.cursor.execute("Select maq.id,maq.nome, maq.estado,maq.tipo from maq")
+	db.cursor.execute("Select id,nome,estado,tipo from maq where tipo!='V'")
 	tudo = db.cursor.fetchall()
 	
 	d = []
