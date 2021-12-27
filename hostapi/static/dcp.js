@@ -25,16 +25,16 @@ function onLoadHosts(){
     	tipo.style = "width:10%"
 	switch( i.tipo ){
 		case "H":
-			tipo.innerHTML = "VM"
+			tipo.innerHTML = "H"
 			tipo.className += "w3-blue"
-			break;
+			break
 		case "S":
-			tipo.innerHTML = "ST"
+			tipo.innerHTML = "S"
 			tipo.className += "w3-teal"
-			break;
+			break
 		default:
 			tipo.innerHTML = "??"
-			break;
+			break
 		}
 			
     	estadoHost = document.createElement("span")

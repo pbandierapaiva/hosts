@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from pydantic import BaseModel
+from typing import Optional
 
 
 from fastapi.responses import HTMLResponse
@@ -29,7 +31,7 @@ async def root():
 	return HTMLResponse(content=html_content)
 
 @app.get("/hosts/{hostid}")
-async def host(hostid):
+async def hostinfo(hostid):
 	db = DB()
 	
 	db.cursor.execute("Select * from maq where id='"+hostid+"'")
@@ -44,16 +46,13 @@ async def host(hostid):
 	h['redes'] = {}
 	for iface in interfaces:
 		h['redes'][iface["rede"]]=iface["ip"]
-	
 	return JSONResponse(content=jsonable_encoder(h))
 
 @app.get("/hosts")
 async def host():
 	db = DB()
 		
-	#db.cursor.execute(
-	#	"Select maq.id,maq.nome, maq.estado,maq.tipo, netdev.ip   \
-	#		from maq,netdev where netdev.maq=maq.id and netdev.rede='ipmi'")
+	# somente Hosts que não são VMs 'V'
 	db.cursor.execute("Select id,nome,estado,tipo from maq where tipo!='V'")
 	tudo = db.cursor.fetchall()
 	
@@ -66,7 +65,42 @@ async def host():
 		for iface in interfaces:
 			li['redes'][iface["rede"]]=iface["ip"]
 		d.append(li)
-		#d.append({'id':li['id'],'nome':li['nome'],'estado':li[2], 'tipo':li[3], 'net':redes})
 	return JSONResponse(content=jsonable_encoder(d))
 
+class NetDev(BaseModel):
+	ip: str
+	ether: Optional[str]
+	rede: str
+	maq: int
+	
+class HostInfo(BaseModel):
+	hostid:int
+	nome: str
+	estado: int
+	tipo: str
+	hospedeiro: Optional[int]
+	so: Optional[str]
+	kernel: Optional[str]
+	
+@app.get("/nets")
+async def listaNets():
+	db = DB()
+	db.cursor.execute("Select nome,vlan,gateway,cidr,prefix from rede")
+	return JSONResponse(content=jsonable_encoder(db.cursor.fetchall()))
+
+
+@app.put("/hosts/{host_id}/nets/")
+async def criaNetDev(host_id):
+	return host_id
+	
+#@app.put("/hosts/{host_id}/nets/", response_model=NetDev)
+#async def criaNetDev(item: NetDev):
+#	return item
+
+#    update_item_encoded = jsonable_encoder(item)
+#    items[item_id] = update_item_encoded
+#    return update_item_encoded
+#@app.put("/net")
+#async def host():
+#	db = DB()
 
