@@ -16,7 +16,6 @@ from conexao import conexao
 app = FastAPI()
 
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/web", StaticFiles(directory="web"), name="web")
 
 class DB:
@@ -85,12 +84,12 @@ class HostInfo(BaseModel):
 @app.get("/nets")
 async def listaNets():
 	db = DB()
-	db.cursor.execute("Select nome,vlan,gateway,cidr,prefix from rede")
+	db.cursor.execute("Select * from rede")
 	return JSONResponse(content=jsonable_encoder(db.cursor.fetchall()))
 
 
-@app.put("/hosts/{host_id}/nets/")
-async def criaNetDev(host_id):
+@app.put("/hosts/{host_id}/nets/", response_model=NetDev)
+async def criaNetDev(host_id,item: NetDev):
 	return host_id
 	
 #@app.put("/hosts/{host_id}/nets/", response_model=NetDev)

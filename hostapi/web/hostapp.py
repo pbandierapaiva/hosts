@@ -144,36 +144,8 @@ class NodeInfo(html.DIV):
 		self.cpokern.disabled = True
 		form.appendChild(self.cpokern)
 		
-		redes = html.DIV("<label>Interfaces: </label>") 
-		for chave in campos["redes"]:
-			redes <= html.BR()
-			tag = html.DIV()
-			tag.classList = "w3-tag"
-			tag.style ={"width":"120px"}
-			tag.innerHTML = campos["redes"][chave]
-			if   chave==  "ipmi":
-				tag.classList.add("w3-sand")
-			elif chave==  "164":
-				tag.classList.add("w3-green")
-			elif chave==  "160":
-				tag.classList.add("w3-lime")
-			elif chave==  "core":
-				tag.classList.add("w3-grey")
-			elif chave==  "under":
-				tag.classList.add("w3-grey")
-			elif chave==  "dmz":
-				tag.classList.add("w3-red")
-			else:
-				tag.classList.add("w3-grey")
-			redes.appendChild(tag)	
-
-		self.novoDev = html.DIV("+", id="buttonAddNet")
-		self.novoDev.bind("click", self.novoNetDev )
-		self.novoDev.className = "w3-dropdown-click w3-badge w3-tiny w3-ripple w3-white w3-border"
-		self.novoDev.style = {"display":"none"}
-		redes.appendChild(self.novoDev)
-			
-		form.appendChild(redes)
+		self.listaInt = ListaInterfaces( self.loc, campos["redes"] )
+		form <= self.listaInt 
 		
 		self.editBtn = html.DIV("Editar")
 		self.editBtn.className = "w3-button w3-border w3-margin"
@@ -195,7 +167,7 @@ class NodeInfo(html.DIV):
 		self.tipo.disabled = False
 		self.cposo.disabled = False
 		self.cpokern.disabled = False
-		self.novoDev.style = {"display":"block"}
+		self.listaInt.enableEdit()
 		self.editBtn.innerHTML = "Salvar"
 		self.editBtn.unbind("click")
 		self.editBtn.bind("click", self.salvar)		
@@ -205,9 +177,39 @@ class NodeInfo(html.DIV):
 		document["infoarea"].innerHTML =  str(dir(self.cposo))
 	def cancelar(self, ev):
 		self.carrega()
+
+class ListaInterfaces(html.DIV):
+	def __init__(self, loc, dicInt):
+		html.DIV.__init__(self)
+		self <= html.LABEL("Interfaces:")
+		self.interfaces = dicInt
+		self.loc = loc
+		# carrega cores das redes 
+		ajax.get("http://localhost:8000/nets/", oncomplete=self.onLoadNets)
+	def onLoadNets(self,req):
+		redesCores = req.json
+		dredesCor={}
+		for r in redesCores:
+			dredesCor[r["nome"]] = r["cor"]
+		for chave in self.interfaces:
+			self <= html.BR()
+			tag = html.DIV()
+			tag.classList = "w3-tag"
+			tag.style ={"width":"120px"}
+			tag.innerHTML = self.interfaces[chave]
+			tag.classList.add(dredesCor[chave])
+			self <= tag
+			
+		self.novoDev = html.DIV("+", id="buttonAddNet")
+		self.novoDev.bind("click", self.novoNetDev )
+		self.novoDev.className = "w3-tag"  #"w3-dropdown-click w3-badge w3-tiny w3-ripple w3-white w3-border"
+		self.novoDev.style = {"display":"none", "width":"120px"}
+		self <= self.novoDev		
 	def novoNetDev(self, ev):
 		AddNet(self.loc)
-
+	def enableEdit(self):
+		self.novoDev.style = {"display":"block"}	
+		
 class AddNet(html.DIV):
 	def __init__(self,loc):
 		html.DIV.__init__(self)
