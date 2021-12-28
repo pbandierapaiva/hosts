@@ -1,5 +1,7 @@
 from browser import document
-from browser import html, ajax, alert
+from browser import html, ajax, alert, confirm
+
+import json
 
 class HostList(html.DIV):
 	def __init__(self):
@@ -26,7 +28,12 @@ class HostList(html.DIV):
 			botaoIpmi = html.A("IPMI")
 			botaoIpmi.className = cssBotao
 			botaoIpmi.target="_blank"
-			botaoIpmi.href = "http://"+h["redes"]["ipmi"]
+
+			for n in h["redes"]:
+				if h["redes"][n] == "ipmi": 
+					#botaoIpmi.href = "http://"+h["redes"]["ipmi"]
+					botaoIpmi.href = "http://"+n
+					break
 			
 			tagTipo = html.A()
 			tagTipo.className = cssBotao
@@ -191,29 +198,32 @@ class ListaInterfaces(html.DIV):
 		dredesCor={}
 		for r in redesCores:
 			dredesCor[r["nome"]] = r["cor"]
-		for chave in self.interfaces:
+		for ip in self.interfaces:
 			self <= html.BR()
 			tag = html.DIV()
 			tag.classList = "w3-tag"
 			tag.style ={"width":"120px"}
-			tag.innerHTML = self.interfaces[chave]
-			tag.classList.add(dredesCor[chave])
+			tag.innerHTML = ip
+			tag.bind("click",self.netdevRemove)
+			tag.classList.add(dredesCor[  self.interfaces[ip]  ])
 			self <= tag
 			
 		self.novoDev = html.DIV("+", id="buttonAddNet")
 		self.novoDev.bind("click", self.novoNetDev )
-		self.novoDev.className = "w3-tag"  #"w3-dropdown-click w3-badge w3-tiny w3-ripple w3-white w3-border"
+		self.novoDev.className = "w3-tag w3-white"  #"w3-dropdown-click w3-badge w3-tiny w3-ripple w3-white w3-border"
 		self.novoDev.style = {"display":"none", "width":"120px"}
 		self <= self.novoDev		
 	def novoNetDev(self, ev):
 		AddNet(self.loc)
 	def enableEdit(self):
 		self.novoDev.style = {"display":"block"}	
+	def netdevRemove(self, ev):
+		confirm("Removendo"+str(ev.currentTarget.innerHTML))
 		
 class AddNet(html.DIV):
 	def __init__(self,loc):
 		html.DIV.__init__(self)
-		self.loc = loc + "/nets"
+		self.loc = loc + "/net"
 		self.maq = int(loc.split("/")[-1])
 		document["dialog"] <= self
 		self.className = "w3-modal"
@@ -233,19 +243,25 @@ class AddNet(html.DIV):
 		caixa <= html.LABEL("Endereço IP")
 		self.ip = html.INPUT()
 		self.ip.className = "w3-input w3-border"
+		caixa <= self.ip
+		
+		caixa <= html.LABEL("Ethernet")
+		self.ether = html.INPUT()
+		self.ether.className = "w3-input w3-border"
+		caixa <= self.ether		
 		ok = html.BUTTON("OK")
 		ok.className = "w3-button w3-margin w3-border w3-round"
 		ok.bind("click", self.confirma)
-		caixa <= self.ip
+
 		caixa <= ok
 		continente <= caixa
 		self <=continente
 	def confirma(self,ev):
 		self.style.display = "none"
 		d = {"ip":self.ip.value, "rede":self.rede.selecionado(), 
-			"ether": None, "maq":self.maq}
+			"maq":self.maq, "ether":self.ether.value }
 		alert(str(d))
-		ajax.put(self.loc, d, oncomplete=self.added)
+		ajax.put("/netdev", data=json.dumps(d), oncomplete=self.added, headers={"Content-Type": "application/json; charset=utf-8"})
 	def added(self, req):
 		document["infoarea"].innerHTML= str(req.json)
 	def show(self):

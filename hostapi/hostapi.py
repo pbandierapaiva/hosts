@@ -1,7 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+
 from pydantic import BaseModel
 from typing import Optional
-
 
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -9,6 +9,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
 import mariadb
+import re
 
 from conexao import conexao
 
@@ -22,6 +23,8 @@ class DB:
 	def __init__(self):
 		self.con= mariadb.connect(**conexao)
 		self.cursor= self.con.cursor(dictionary=True)
+	def commit(self):
+		self.con.commit()
 
 @app.get("/")
 async def root():
@@ -44,7 +47,7 @@ async def hostinfo(hostid):
 	 
 	h['redes'] = {}
 	for iface in interfaces:
-		h['redes'][iface["rede"]]=iface["ip"]
+		h['redes'][iface["ip"]]=iface["rede"]
 	return JSONResponse(content=jsonable_encoder(h))
 
 @app.get("/hosts")
@@ -62,14 +65,15 @@ async def host():
 		 
 		li['redes'] = {}
 		for iface in interfaces:
-			li['redes'][iface["rede"]]=iface["ip"]
+			#li['redes'][iface["rede"]]=iface["ip"]
+			li['redes'][iface["ip"]]=iface["rede"]
 		d.append(li)
 	return JSONResponse(content=jsonable_encoder(d))
 
 class NetDev(BaseModel):
 	ip: str
-	ether: Optional[str]
 	rede: str
+	ether: Optional[str]
 	maq: int
 	
 class HostInfo(BaseModel):
@@ -88,9 +92,31 @@ async def listaNets():
 	return JSONResponse(content=jsonable_encoder(db.cursor.fetchall()))
 
 
-@app.put("/hosts/{host_id}/nets/", response_model=NetDev)
-async def criaNetDev(host_id,item: NetDev):
-	return host_id
+@app.put("/netdev")
+async def criaNetDev( nd: NetDev):
+
+	ipValido = True
+	if not re.findall("\d+\.\d+\.\d+\.\d+", nd.ip):
+		ipValido=False
+	else:
+		for n in nd.ip.split('.'):
+			try:
+				if int(n)<0 or int(n)>254:
+					ipValido=False
+			except:
+				ipValido=False
+	if not ipValido:
+		return JSONResponse(content=jsonable_encoder({'status':'ERROR: invalid address'}))
+	cmdins = "INSERT INTO netdev (ip,ether,rede,maq) VALUES ('%s','%s','%s',%d)"%(nd.ip,nd.ether,nd.rede,nd.maq)
+	db = DB()
+	try:
+		status = db.cursor.execute(cmdins)
+		db.commit()
+	except:
+		return JSONResponse(content=jsonable_encoder({'status':'ERROR: duplicate IP'}))
+	
+	print(str(dir(db.cursor)))
+	return JSONResponse(content=jsonable_encoder({'status':'OK'}))
 	
 #@app.put("/hosts/{host_id}/nets/", response_model=NetDev)
 #async def criaNetDev(item: NetDev):
