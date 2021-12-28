@@ -1,4 +1,6 @@
 conexao.py
 bin/*
 bin*
-brython
+brython*
+*~
+.~*
