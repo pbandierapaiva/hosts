@@ -7,3 +7,5 @@ conexao = {
     "host" : "<servidor>",
     "database" : "dcp"
 }
+
+rootpw='<***senha de root****>'
