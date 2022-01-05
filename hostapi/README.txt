@@ -9,3 +9,9 @@ Como fiz para colocar no ar:
   522  git pull
   527  cd hostapi/
   528  pip  install -r requirements.txt
+
+Se já tiver o ambiente, basta
+
+	source hostapi/bin/activate
+	cd hostapi
+	uvicorn hostapi:app --reload

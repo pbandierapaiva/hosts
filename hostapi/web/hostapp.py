@@ -11,7 +11,7 @@ class HostList(html.DIV):
 		ajax.get("http://localhost:8000/hosts", oncomplete=self.onLoadHosts)
 		self.className = "w3-sidebar w3-light-grey w3-bar-block"
 		self.style={"width":"25%"}
-		titulo = html.H3("Hosts <span class=\"w3-tiny\">usando Brython")
+		titulo = html.H3("Hosts <span class=\"w3-tiny\">usando Brython!!!")
 		titulo.className = "w3-bar-item"
 		self <= titulo
 
