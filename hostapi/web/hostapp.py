@@ -175,6 +175,15 @@ class RadioEstado(html.DIV):
 			if self.estadoON.checked: return "1"
 			return None
 
+class NodeInfoLine(html.DIV):
+	def __init__(self, nid=None):
+		html.DIV.__init__(self, Class="w3-card-4")
+		
+		if nid:	ajax.get("/hosts/"+str(nid),oncomplete=self.onHostInfoLoaded)
+	def onHostInfoLoaded(self, response):
+		resp = response.json
+		alert(str(resp))
+		
 class NodeInfo(html.DIV):
 	def __init__(self, loc):
 		html.DIV.__init__(self)
@@ -373,6 +382,9 @@ class ListaInterfaces(html.DIV):
 class EstadoVM(html.DIV):
 	def __init__(self,hostid,ip):
 		html.DIV.__init__(self)
+		
+		
+		
 		self <= html.LABEL("VMs:")
 		self.ip = ip
 		self.hostid = hostid
@@ -380,6 +392,7 @@ class EstadoVM(html.DIV):
 		self <= self.mensagem
 		ajax.get("/vmhosts/%s"%self.ip, oncomplete=self.onLoadVMs)
 	def onLoadVMs(self,req):
+		self.mensagem.hidden = true
 		self.estado = req.json
 		for vm in self.estado["all"]:
 			ajax.get("/vm/"+str(self.hostid)+"/"+vm, oncomplete=self.vmLoaded)

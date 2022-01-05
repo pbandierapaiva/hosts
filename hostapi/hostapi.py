@@ -177,6 +177,13 @@ async def criaNetDev( nd: NetDev):
 	print(str(dir(db.cursor)))
 	return JSONResponse(content=jsonable_encoder({'status':'OK'}))
 
+@app.get("/hosts/{host_id}/vm/")
+async def getVMInfo(host_id):
+			
+			
+	return JSONResponse(content=jsonable_encoder({host_id:1}))
+
+
 @app.get("/vm/{host_id}/{nome_vm}")
 async def getVM(nome_vm):
 		db = DB()
