@@ -20,9 +20,6 @@ class DB:
 def allHosts():
 	db = DB()
 
-	sosim = input("Incluir verificação SO?")
-	vmsim = input("Verificar VMs")
-
 	# somente Hosts que não são VMs 'V'
 	# db.cursor.execute("Select id,nome,estado,tipo,cpu,n,mem from maq where tipo!='V'")
 	db.cursor.execute("Select id,nome,estado,tipo,cpu,n,mem from maq where tipo='H'")
@@ -55,14 +52,11 @@ def allHosts():
 			status = ipmiInfo(ipmi, hostline["altsec"])
 		else: status = ipmiInfo(ipmi)
 
-		if hostline["estado"]==status:
-			print("Status OK ", status)
-		else:
-			print("Status ALTERADO", status)
+		if hostline["estado"]!=status:
+			print("Status ALTERADO %s %s %s"%(hostline["nome"],hostid,status))
 			updcmd = "UPDATE maq SET estado='%s'	WHERE id='%s'"%(status,hostid)
-			print(updcmd)
+			# print(updcmd)
 			try:
-				print("Alterando estado "+status)
 				status = db.cursor.execute(updcmd)
 			except:
 				input("Erro inserção BD >>"+updcmd)
@@ -73,10 +67,8 @@ def allHosts():
 			continue
 		# continue
 
-		print("SSH Host")
-
 		for ip in li['redes']:
-			ret = hostinfo(ip)
+			ret = hostinfo(ip,hostid)
 			if ret['STATUS']=="OK":
 				ipsucesso=ip
 				hostOK=True
@@ -89,14 +81,12 @@ def allHosts():
 		updcmd = """UPDATE maq SET cpu='%s', n=%d, mem='%s', kernel='%s', so='%s'
 				WHERE id='%s'
 		"""%(ret["cpu"],ret["n"],ret["mem"],ret["kernel"],ret["so"],hostid)
-		#h["maq"])
 
-		#print(updcmd)
 		try:
-			print("inserindo "+str(ret))
+			# print("inserindo "+str(ret))
 			status = db.cursor.execute(updcmd)
 		except:
-			print("Erro inserção BD >>"+updcmd)
+			print("Erro atualização de BD >>"+updcmd)
 			input("	")
 		db.commit()
 
@@ -106,14 +96,25 @@ def allHosts():
 
 		for vm in vms:
 			if vm["nome"] not in ret["all"]:
-				input("\t*** VM NOVE encontrada: %s %s"%(vm["nome"],vm["id"]))
+				input("\t*** VM NOVA encontrada: %s %s"%(vm["nome"],vm["id"]))
+				# sql = "UPDATE maq SET estado='%s' WHERE id=%s"%(vm["estado"],vm["id"])
+				sql = """INSERT INTO maq (nome, estado, tipo, hospedeiro) VALUES ('%s','%s','%s','%s')
+					"""%(vm["nome"],vm["estado"],vm["tipo"],hostid)
+				db.cursor.execute(selcmd)
+				db.commit()
+
 			if (vm["estado"]=='0' and vm["nome"] not in ret["off"] ) or \
-				(vm["estado"]=='1' and vm["nome"] not in ret["on"] ):
+				(vm["estado"]=='1' and vm["nome"] not in ret["on"] ) or \
+				(vm["estado"]=='-1' and vm["nome"] not in ret["other"] ):
 				input("\t*** Estado alterado VM:  %s %s ( %s )"%(vm["nome"],vm["id"],vm["estado"]))
-			print("VMs Ok")
+
+				sql = "UPDATE maq SET estado='%s' WHERE id=%s"%(vm["estado"],vm["id"])
+				db.cursor.execute(selcmd)
+				db.commit()
 
 
-		print(ret)
+			print("VM "+vm["nome"] + " Ok")
+
 
 def ipmiInfo(ip,altsec=rootpw):
 	print("\tIPMI "+ip)
@@ -137,7 +138,7 @@ def ipmiInfo(ip,altsec=rootpw):
 			return "0"
 
 
-def hostinfo(ip):
+def hostinfo(ip, hostid):
 	client = SSHClient()
 	client.load_system_host_keys()
 	client.load_host_keys("/home/paiva/.ssh/known_hosts")
@@ -212,6 +213,19 @@ def hostinfo(ip):
 	ret["off"]=off
 	ret["all"]=all
 	ret["other"]=other
+
+	## Coleta MAC das vms
+	for vm in all:
+			stdin, stdout, stderr = client.exec_command('virsh domiflist %s'%(vm))
+			linhas = stdout.readlines()
+			for l in linhas[2:]:
+				p = " ".join(l.split()).split()
+				if len(p)<5: continue
+				inscmd = """INSERT INTO coletamac (maq,nomevm,mac,interface,tipo,fonte,modelo)
+						VALUES (%d,'%s','%s','%s','%s','%s','%s')"""%(hostid,vm,p[4],p[0],p[1],p[2],p[3])
+				db = DB()
+				db.cursor.execute(inscmd)
+				db.commit()
 
 	return ret
 	# {"on":on,"off":off, "all":all, "other":other, "STATUS":"OK", "MSG":err}
