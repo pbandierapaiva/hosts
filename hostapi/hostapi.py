@@ -10,9 +10,11 @@ from fastapi.responses import JSONResponse
 
 import mariadb
 import re
+import os
+import subprocess
 
 from conexao import conexao, rootpw
-from paramiko.client import SSHClient
+from paramiko.client import SSHClient, AutoAddPolicy
 
 
 app = FastAPI()
@@ -52,6 +54,40 @@ async def root():
 	html_content = open("static/host.html").read()
 	return HTMLResponse(content=html_content)
 
+@app.get("/hosts/{hostid}/powerstatus")
+async def hostinfo(hostid):
+	db = DB()
+
+	db.cursor.execute("Select netdev.ip, maq.altsec from maq,netdev where maq.id=netdev.maq AND maq.id='"+hostid+"' AND netdev.rede='ipmi'")
+	h = db.cursor.fetchone()
+
+	if not h:
+		o = {"hostid":hostid,"status":"ERRO", "msg":"Não encontrado no banco" }
+		return JSONResponse(content=jsonable_encoder(o))
+	ip = h["ip"]
+	if h["altsec"]:
+		executa = ['ipmitool','-c', '-I','lanplus','-H', ip, '-U', 'admin', '-P', h["altsec"],'power','status']
+	else:
+		executa = ['ipmitool','-c', '-I','lanplus','-H', ip, '-U', 'admin', '-P', rootpw,'power','status']
+
+	output = subprocess.run(executa, capture_output=True, text=True		)
+
+	o = {"hostid":hostid,"ip":ip}
+	if output.returncode==1:
+		o["status"]='ERRO'
+		o["msg"]= output.stderr
+	else:
+		o["status"]='OK'
+		mensagem = str(output.stdout).strip()
+		o["msg"]= mensagem
+		ultima = mensagem.split()[-1]
+		if str(ultima)=='on':
+			o["power"]= "1"
+		else:
+			o["power"]= "0"
+
+	return JSONResponse(content=jsonable_encoder(o))
+
 @app.get("/hosts/{hostid}")
 async def hostinfo(hostid):
 	db = DB()
@@ -85,7 +121,6 @@ async def host():
 
 		li['redes'] = {}
 		for iface in interfaces:
-			#li['redes'][iface["rede"]]=iface["ip"]
 			li['redes'][iface["ip"]]=iface["rede"]
 		d.append(li)
 	return JSONResponse(content=jsonable_encoder(d))
@@ -108,7 +143,13 @@ def vmhostlist(ip):
 	client = SSHClient()
 	client.load_system_host_keys()
 	client.load_host_keys("/home/paiva/.ssh/known_hosts")
-	client.connect(ip,username='root',password=rootpw)
+	try:
+		client.connect(ip,username='root',password=rootpw)
+	except Exception as ex:
+		template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+		m = template.format(type(ex).__name__, ex.args)
+		return JSONResponse(content=jsonable_encoder({'STATUS':'ERROR', 'MSG':m}))
+
 	all=[]
 	on=[]
 	off=[]
@@ -125,17 +166,19 @@ def vmhostlist(ip):
 			on.append(l.strip())
 	for l in stderr:
 		err+=l
-	stdin, stdout, stderr = client.exec_command('virsh list --name --state-shutoff')
+	stdin, stdout, stderr = client.exec_command('virsh list --name --inactive')
 	for l in stdout:
 			if l.strip()=='': break
 			off.append(l.strip())
 	for l in stderr:
 		err+=l
-	return JSONResponse(content=jsonable_encoder({"on":on,"off":off, "all":all, "ERROR":err}))
+	other = list( set(all) - (set(on)|set(off)))
+	return JSONResponse(content=jsonable_encoder({"on":on,"off":off, "all":all, "other":other, "STATUS":"OK", "MSG":err}))
 
 @app.get("/vmhosts/{ip}/cmd/{cmd}")
 async def executa(ip,cmd):
 	client = SSHClient()
+	client.set_missing_host_key_policy( AutoAddPolicy )
 	client.load_system_host_keys()
 	client.load_host_keys("/home/paiva/.ssh/known_hosts")
 	client.connect(ip,username='root',password=rootpw)
@@ -144,12 +187,43 @@ async def executa(ip,cmd):
 
 @app.get("/vmhosts/{ip}/release")
 async def catrelease(ip):
+	ret = {'so':'','kernel':'','status':'OK'}
 	client = SSHClient()
 	client.load_system_host_keys()
 	client.load_host_keys("/home/paiva/.ssh/known_hosts")
 	client.connect(ip,username='root',password=rootpw)
+	ret['status']=""
 	stdin, stdout, stderr = client.exec_command("cat /etc/system-release")
-	return JSONResponse(content=jsonable_encoder({"out":stdout.read(),"error":stderr.read()}))
+	try:
+		ret['so'] = stdout.read()
+	except:
+		ret['status']+="SO: "+ str( stderr.read() )
+
+	stdin, stdout, stderr = client.exec_command("uname -a")
+	try:
+		ret['kernel'] = stdout.read()   #.split(' ')[2]
+	except:
+		ret['status']+="Kernel " + str( stderr.read() )
+
+	stdin, stdout, stderr = client.exec_command("grep 'model name' /proc/cpuinfo")
+	try:
+		li = stdout.readlines()
+
+		ret["n"] = len(li)
+		ret['cpu'] = li[0].split('\t: ')[1]
+	except:
+		ret['status']+="CPU " + str( stderr.read() )
+
+	stdin, stdout, stderr = client.exec_command("free -h | grep Mem:")
+	try:
+		li = stdout.readline()
+		ret["mem"] = " ".join(li.split()).split()[1]
+	except:
+		ret['status']+="CPU " + str( stderr.read() )
+
+
+
+	return JSONResponse(content=jsonable_encoder(ret))
 
 @app.put("/netdev")
 async def criaNetDev( nd: NetDev):
@@ -174,15 +248,15 @@ async def criaNetDev( nd: NetDev):
 	except:
 		return JSONResponse(content=jsonable_encoder({'status':'ERROR: duplicate IP'}))
 
-	print(str(dir(db.cursor)))
+	# print(str(dir(db.cursor)))
 	return JSONResponse(content=jsonable_encoder({'status':'OK'}))
 
-@app.get("/hosts/{host_id}/vm/")
+@app.get("/hosts/{host_id}/vm")
 async def getVMInfo(host_id):
-			
-			
-	return JSONResponse(content=jsonable_encoder({host_id:1}))
-
+	db = DB()
+	db.cursor.execute("Select * from maq where hospedeiro='"+host_id+"'")
+	h = db.cursor.fetchall()
+	return JSONResponse(content=jsonable_encoder(h))
 
 @app.get("/vm/{host_id}/{nome_vm}")
 async def getVM(nome_vm):
@@ -208,6 +282,24 @@ async def criaVM(i: HostInfo):
 	except:
 		return JSONResponse(content=jsonable_encoder({'status':'ERROR: inserting into database'}))
 	return JSONResponse(content=jsonable_encoder({"data":i.hostid, "status":"OK"}))
+
+@app.post("/hosts/{host_id}/{status}")
+async def estadoHost(host_id, status):
+	if status not in ["on","off","other"]:
+		return JSONResponse(content=jsonable_encoder({"STATUS":"ERROR","MSG":"Status not on or off"}))
+	if status=="on":
+		s="1"
+	elif status=="off":
+		s="0"
+	else: s = "-1"
+	sql = "UPDATE maq SET estado='%s' WHERE id=%s"%(s,host_id)
+	db = DB()
+	try:
+		status = db.cursor.execute(sql)
+		db.commit()
+	except Exception as ex:
+		return JSONResponse(content=jsonable_encoder({'STATUS':'ERROR', 'MSG':ex.args}))
+	return JSONResponse(content=jsonable_encoder({"status":"OK"}))
 
 @app.post("/hosts/{host_id}")
 async def atualizaHost(item: HostInfo):
