@@ -292,6 +292,8 @@ class NodeInfo(html.DIV):
 		titulo = html.LABEL("<h2>ID: "+str(self.dadoshost["id"])+" - "+self.dadoshost["nome"]+"</n2>")
 		form <= titulo
 
+
+		form <= HostLine(self.dadoshost)
 		self.nome = EntraTexto("Nome",self.dadoshost["nome"])
 		form <= self.nome
 		self.cposo = EntraTexto("Sistema operacional",self.dadoshost["so"])
@@ -767,7 +769,7 @@ class Busca(html.DIV):
 		html.DIV.__init__(self)
 		PegaTexto("Nome do nó", self.buscaNome)
 	def buscaNome(self, nome):
-		Alerta(nome)
+		Alerta()
 
 def buscaNo(ev):
 	# nome = prompt("Entre com nome do nó")

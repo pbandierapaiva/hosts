@@ -215,6 +215,11 @@ def hostinfo(ip, hostid):
 	ret["other"]=other
 
 	## Coleta MAC das vms
+	db = DB()
+	updcmd = "UPDATE coletamac SET atualizado=1"
+	db.cursor.execute(updcmd)
+	db.commit()
+
 	for vm in all:
 			stdin, stdout, stderr = client.exec_command('virsh domiflist %s'%(vm))
 			linhas = stdout.readlines()
@@ -223,7 +228,6 @@ def hostinfo(ip, hostid):
 				if len(p)<5: continue
 				inscmd = """INSERT INTO coletamac (maq,nomevm,mac,interface,tipo,fonte,modelo)
 						VALUES (%d,'%s','%s','%s','%s','%s','%s')"""%(hostid,vm,p[4],p[0],p[1],p[2],p[3])
-				db = DB()
 				db.cursor.execute(inscmd)
 				db.commit()
 
