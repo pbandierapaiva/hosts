@@ -88,6 +88,16 @@ async def hostinfo(hostid):
 
 	return JSONResponse(content=jsonable_encoder(o))
 
+@app.get("/busca/{nome}")
+async def hostsearch(nome):
+	db = DB()
+
+	db.cursor.execute("Select * from maq where nome='"+nome+"'")
+	h = db.cursor.fetchone()
+	if not h:
+		return None
+	return JSONResponse(content=jsonable_encoder(h))
+
 @app.get("/hosts/{hostid}")
 async def hostinfo(hostid):
 	db = DB()

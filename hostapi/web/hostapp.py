@@ -1,5 +1,5 @@
 from browser import document
-from browser import html, ajax, alert, confirm
+from browser import html, ajax, alert, confirm, prompt
 
 from browser.widgets.dialog import InfoDialog, Dialog
 
@@ -143,6 +143,21 @@ class Alerta(html.DIV):
 	def dismiss(self,ev):
 		self.style.display='none'
 
+class PegaTexto(Alerta):
+	def __init__(self, msg, callback, tit="Entre com texto"):
+		Alerta.__init__(self, msg, tit)
+		self.callback = callback
+		# self <= EntraTexto("Nome a ser buscado")
+		self.inputCpo = html.INPUT()
+		self.inputCpo.className = "w3-input w3-border"
+		botaoConfirma = html.DIV("OK", Class="w3-button w3-block")
+		botaoConfirma.bind("click", self.confirma)
+		self.modal <= self.inputCpo
+		self.modal <= botaoConfirma
+	def confirma(self, ev):
+		self.style.display='none'
+		self.callback(self.inputCpo.value)
+
 class Confirma(Alerta):
 	def __init__(self, msg, callback, titulo='Confirme'):
 		Alerta.__init__(self, msg, titulo)
@@ -249,24 +264,33 @@ class RadioEstado(html.DIV):
 class NodeInfo(html.DIV):
 	def __init__(self, h):
 		html.DIV.__init__(self)
-		self.hostid = h  #["id"]  #int(loc.split('/')[-1])
-		self.loc = "/hosts/"+str(h)
 		document["infoarea"].innerHTML=""
 		document["infoarea"] <= self
-		self.carrega()
+
+		if type(h)==int:
+			self.hostid = h  #["id"]  #int(loc.split('/')[-1])
+			self.loc = "/hosts/"+str(h)
+			self.carrega()
+		else:
+			self.hostid = h["id"]
+			self.onLoadInfo(h)
 	def carrega(self):
 		ajax.get(self.loc, oncomplete=self.onLoadInfo)
 		self.clear()
 
 	def onLoadInfo(self, req):
-		self.dadoshost = req.json
-
-		tit = document["hititle"]
-		tit.innerHTML = "Host info: "+self.dadoshost["nome"]
+		if type(req)==dict:
+			self.dadoshost=req
+		else:
+			self.dadoshost = req.json
+		#
+		# tit = document["hititle"]
+		# tit.innerHTML = "Host info: "+self.dadoshost["nome"]
 
 		form = html.FORM()
 		form.className = "w3-container"
-		form <= html.LABEL("<p>ID: "+str(self.dadoshost["id"])+"</p>")
+		titulo = html.LABEL("<h2>ID: "+str(self.dadoshost["id"])+" - "+self.dadoshost["nome"]+"</n2>")
+		form <= titulo
 
 		self.nome = EntraTexto("Nome",self.dadoshost["nome"])
 		form <= self.nome
@@ -310,6 +334,9 @@ class NodeInfo(html.DIV):
 		form.append(self.cancelBtn)
 
 		self.appendChild(form)
+		if self.dadoshost["tipo"]=="H":
+			self <= html.H3("Máquinas virtuais")
+			self.appendChild(EstadoVM(self.dadoshost))
 	def editar(self, ev):
 		self.nome.enable()
 		self.cposo.enable()
@@ -472,9 +499,10 @@ class EstadoVM(html.DIV):
 				self.ip = n
 				self.ips.append(n)
 
-		tit = document["hititle"]
+		# tit = document["hititle"]
 		anc = html.SPAN(hostinfo["nome"]+"("+str(hostinfo["id"])+")", Class="w3-ripple")
 		anc.bind("click",self.homeHost)
+		tit = html.DIV()
 		tit.innerHTML = "VMs on host: "
 		tit <= anc
 		# +hostinfo["nome"]+"("+str(hostinfo["id"])+")"
@@ -659,8 +687,143 @@ class SelectNet(html.SELECT):
 	def selecionado(self):
 		return self.selectedOptions.item(0).value
 
+
+UHEIGHT = 25
+RWIDTH = "200px"
+RHEIGHT = "2500px"
+
+
+
+class Rack( html.DIV ):
+    def __init__(self):
+        # html.DIV.__init__(self, Class="w3-container w3-grey ") #, style={ "height":"500px"; "width":"100"} )
+# <nav class="w3-sidenav w3-white w3-card-2" style="width:25%">
+		html.DIV.__init__(self, Class="w3-sidenav w3-grey w3-card-2")
+		self.style = {"width": RWIDTH, "margin":0, "padding":0 } #, "position":"absolute"}
+
+    def insereUnidade(self, u ):
+        self.prepend(u)
+
+
+class Unidade(html.DIV ):
+    def __init__(self, h, mods):
+        html.DIV.__init__(self, Class="w3-container w3-row")
+        self.classList.add("w3-border")
+        self.style = { "height":"100%", "width": "100%", "margin":0, "padding":0}
+
+        self.mods = mods
+        self.style = { "height":"%dpx"%(UHEIGHT*h), "width": RWIDTH}
+
+        if type(mods)==str:
+            self<= Modulo(mods)
+        elif len(self.mods)==1:
+            self<=  self.mods[0]
+        elif len(self.mods)==4:
+            cel1 = html.DIV(Class="w3-half")
+            cel2 = html.DIV(Class="w3-half")
+            cel1.style={"height":"50%"}
+            cel2.style={"height":"50%"}
+            cel1 <= self.mods[1]
+            cel1 <= self.mods[0]
+            cel2 <= self.mods[3]
+            cel2 <= self.mods[2]
+            self <= cel1
+            self <= cel2
+
+class Modulo(html.DIV):
+    def __init__(self, id=None):
+        html.DIV.__init__(self)  #, Class="w3-panel w3-cell w3-red")
+        self.classList.add("w3-border")
+        self.classList.add("w3-tiny")
+        self.style = { "margin":0, "padding":0, "height":"100%"}#,   "height": "100vh"}
+        # self.innerHTML="undef"
+
+        if type(id)==str:
+            self.innerHTML=id
+            self.classList.add("w3-light-grey")
+        elif id!=None:
+			self.id = "mod-%d"%id
+			ajax.get("/hosts/%d"%id, oncomplete=self.dataLoaded)
+
+    def dataLoaded(self,res):
+		self.h = res.json
+		self.innerHTML = str(self.h["id"]) + " - " + self.h["nome"]
+		# self.cartao <= html.DIV(str(h), Class="w3-dropdown-content w3-card-4")
+		self.classList.add("w3-hover-blue")
+		if self.h["estado"]=='1':
+		    self.classList.add("w3-green")
+		elif  self.h["estado"]=='-1':
+		    self.classList.add("w3-yellow")
+		self.bind("click", self.mostraHost)
+
+    def mostraHost(self,ev):
+        NodeInfo(self.h)
+        # p =html.SPAN("X",str(h["id"]),Class="w3-dropdown-hover w3-panel")
+        # p<= html.DIV(str(h), Class="w3-dropdown-content w3-card-4")
+        # self <= p
+
+class Busca(html.DIV):
+	def __init__(self):
+		html.DIV.__init__(self)
+		PegaTexto("Nome do nó", self.buscaNome)
+	def buscaNome(self, nome):
+		Alerta(nome)
+
+def buscaNo(ev):
+	# nome = prompt("Entre com nome do nó")
+	Busca()
+	# alert(ev)
+
+
+# PegaTexto("Nome do host",buscaNo)
+rack = Rack()
+#/ rack.insereUnidade(Unidade(2,1)
+
+rack.insereUnidade(Unidade(2,[Modulo(526),Modulo(527),Modulo(528),Modulo(529)]))
+rack.insereUnidade(Unidade(2,[Modulo(530),Modulo(531),Modulo(532),Modulo(533)]))
+rack.insereUnidade(Unidade(2,[Modulo(534),Modulo(535),Modulo(536),Modulo(537)]))
+rack.insereUnidade(Unidade(2,[Modulo(538),Modulo(539),Modulo(540),Modulo(541)]))
+rack.insereUnidade(Unidade(2,[Modulo(542),Modulo(543),Modulo(544),Modulo(545)]))
+rack.insereUnidade(Unidade(2,[Modulo(546),Modulo(547),Modulo(548),Modulo(549)]))
+rack.insereUnidade(Unidade(2,[Modulo(550),Modulo(551),Modulo(552),Modulo(553)]))
+rack.insereUnidade(Unidade(2,[Modulo(554),Modulo(555),Modulo(556),Modulo(557)]))
+rack.insereUnidade(Unidade(1, "Aruba-236"))
+rack.insereUnidade(Unidade(1, "Aruba-237"))
+rack.insereUnidade(Unidade(2, [Modulo(562)]))
+rack.insereUnidade(Unidade(2, [Modulo(563)]))
+rack.insereUnidade(Unidade(2,[Modulo(558),Modulo(559),Modulo(560),Modulo(561)]))
+rack.insereUnidade(Unidade(1, "DISPLAY"))
+rack.insereUnidade(Unidade(1, [Modulo(567)]))
+rack.insereUnidade(Unidade(1, [Modulo(521)]))
+rack.insereUnidade(Unidade(1, [Modulo(522)]))
+rack.insereUnidade(Unidade(1, [Modulo(523)]))
+rack.insereUnidade(Unidade(1, [Modulo(524)]))
+rack.insereUnidade(Unidade(1, [Modulo(525)]))
+
+rack.insereUnidade(Unidade(2, [Modulo(566)]))
+rack.insereUnidade(Unidade(1, [Modulo(564)]))
+rack.insereUnidade(Unidade(1, [Modulo(565)]))
+
+
+cabecalho = html.DIV("DCP-DIS-EPM-Unifesp", id="cabecalho", Class="w3-light-grey")
+cabecalho.style={"width":"100%"}
+busca = html.I(Class="fa fa-search w3-right")
+busca.bind("click", buscaNo)
+cabecalho<=busca
+main = html.DIV()
+main.style={"display": "table-row"}
+rack.style={"display": "table-cell"}
+infoarea = html.DIV(id="infoarea", Class="w3-container w3-light-grey")
+infoarea.style = {"display": "table-cell"}  #{"margin-left":"220px"}
+# infoarea.style = {"flex-grow":"1"}
+
+document <= cabecalho
+main <= rack
+main <= infoarea
+document <= main
+
 # def inicia():
-document["listahost"] <= HostList()
+# document["listahost"] <= HostList(
 
 
 # confirma = Confirma("TESTE", inicia)
