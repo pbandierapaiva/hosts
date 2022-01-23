@@ -216,7 +216,7 @@ def hostinfo(ip, hostid):
 	ret["other"]=other
 
 	## Coleta MAC das vms
-	# db = DB()
+	db = DB()
 	# updcmd = "UPDATE coletamac SET atualizado=1"
 	# db.cursor.execute(updcmd)
 	# db.commit()
