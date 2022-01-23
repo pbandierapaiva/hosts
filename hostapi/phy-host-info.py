@@ -46,7 +46,8 @@ def allHosts():
 		for hostline in hosts:
 			if hostline["rede"]=='ipmi':
 				ipmi = hostline["ip"]
-			li['redes'].append(hostline["ip"])
+			else:
+				li['redes'].append(hostline["ip"])
 
 		if hostline["altsec"]:
 			status = ipmiInfo(ipmi, hostline["altsec"])
@@ -59,7 +60,7 @@ def allHosts():
 			try:
 				status = db.cursor.execute(updcmd)
 			except:
-				input("Erro inserção BD >>"+updcmd)
+				input("Erro atualização de status no BD >>"+updcmd)
 
 			db.commit()
 
@@ -215,10 +216,10 @@ def hostinfo(ip, hostid):
 	ret["other"]=other
 
 	## Coleta MAC das vms
-	db = DB()
-	updcmd = "UPDATE coletamac SET atualizado=1"
-	db.cursor.execute(updcmd)
-	db.commit()
+	# db = DB()
+	# updcmd = "UPDATE coletamac SET atualizado=1"
+	# db.cursor.execute(updcmd)
+	# db.commit()
 
 	for vm in all:
 			stdin, stdout, stderr = client.exec_command('virsh domiflist %s'%(vm))
