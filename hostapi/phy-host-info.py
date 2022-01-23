@@ -76,6 +76,8 @@ def allHosts():
 
 		if not hostOK:
 			print("Problemas com host: ",li)
+
+			input("ssh root@")
 			continue
 
 		updcmd = """UPDATE maq SET cpu='%s', n=%d, mem='%s', kernel='%s', so='%s'
