@@ -33,7 +33,7 @@ def allHosts():
 
 		hostid = li["id"]
 
-		print("Host: %s (%d)"%(li["nome"],hostid))
+		print("\n\n*****\nHost: %s (%d)"%(li["nome"],hostid))
 
 		db.cursor.execute("Select netdev.ip, netdev.rede, maq.altsec, maq.estado from maq,netdev where maq.id=netdev.maq AND maq.id='%d'"%hostid)
 		hosts = db.cursor.fetchall()
@@ -53,7 +53,7 @@ def allHosts():
 		else: status = ipmiInfo(ipmi)
 
 		if hostline["estado"]!=status:
-			print("Status ALTERADO %s %s %s"%(hostline["nome"],hostid,status))
+			print("Status ALTERADO %s %s"%(hostid,status))
 			updcmd = "UPDATE maq SET estado='%s'	WHERE id='%s'"%(status,hostid)
 			# print(updcmd)
 			try:
@@ -76,8 +76,6 @@ def allHosts():
 
 		if not hostOK:
 			print("Problemas com host: ",li)
-
-			input("ssh root@")
 			continue
 
 		updcmd = """UPDATE maq SET cpu='%s', n=%d, mem='%s', kernel='%s', so='%s'
