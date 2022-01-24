@@ -217,9 +217,6 @@ def hostinfo(ip, hostid):
 
 	## Coleta MAC das vms
 	db = DB()
-	# updcmd = "UPDATE coletamac SET atualizado=1"
-	# db.cursor.execute(updcmd)
-	# db.commit()
 
 	for vm in all:
 			stdin, stdout, stderr = client.exec_command('virsh domiflist %s'%(vm))
