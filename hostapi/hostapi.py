@@ -38,6 +38,7 @@ class NetDev(BaseModel):
 class HostInfo(BaseModel):
 	hostid:Optional[int]
 	nome: str
+	comentario: str
 	estado: str
 	tipo: Optional[str]
 	hospedeiro: Optional[int]
@@ -55,7 +56,7 @@ async def root():
 	return HTMLResponse(content=html_content)
 
 @app.get("/hosts/{hostid}/powerstatus")
-async def hostinfo(hostid):
+async def hostinfoPowerStatus(hostid):
 	db = DB()
 
 	db.cursor.execute("Select netdev.ip, maq.altsec from maq,netdev where maq.id=netdev.maq AND maq.id='"+hostid+"' AND netdev.rede='ipmi'")
@@ -85,21 +86,37 @@ async def hostinfo(hostid):
 			o["power"]= "1"
 		else:
 			o["power"]= "0"
-
 	return JSONResponse(content=jsonable_encoder(o))
+
+@app.put("/hosts/{hostid}/powerstatus/{estado}")
+async def hostinfoPowerStatus(hostid,estado):
+	db = DB()
+	try:
+		db.cursor.execute("UPDATE maq SET estado='%s' WHERE id=%s"%(estado,hostid))
+		print("UPDATE maq SET estado='%s' WHERE id=%s"%(estado,hostid))
+		db.commit()
+	except:
+		print("ERRO DE UPDATE")
 
 @app.get("/busca/{nome}")
 async def hostsearch(nome):
 	db = DB()
 
-	db.cursor.execute("Select * from maq where nome='"+nome+"'")
-	h = db.cursor.fetchone()
-	if not h:
+	db.cursor.execute("Select * from maq where nome LIKE '%"+nome+"%'")
+	hostlist = db.cursor.fetchall()
+	if not hostlist:
 		return None
-	return JSONResponse(content=jsonable_encoder(h))
+	for h in hostlist:
+		db.cursor.execute("Select rede,ip from netdev where maq='"+str(h['id'])+"'")
+		interfaces = db.cursor.fetchall()
+		h['redes'] = {}
+		for iface in interfaces:
+			h['redes'][iface["ip"]]=iface["rede"]
+
+	return JSONResponse(content=jsonable_encoder(hostlist))
 
 @app.get("/hosts/{hostid}")
-async def hostinfo(hostid):
+async def hostinfoById(hostid):
 	db = DB()
 
 	db.cursor.execute("Select * from maq where id='"+hostid+"'")
@@ -121,7 +138,7 @@ async def host():
 	db = DB()
 
 	# somente Hosts que não são VMs 'V'
-	db.cursor.execute("Select id,nome,estado,tipo,cpu,n,mem from maq where tipo!='V'")
+	db.cursor.execute("Select id,nome,comentario,estado,tipo,cpu,n,mem from maq where tipo!='V'")
 	tudo = db.cursor.fetchall()
 
 	d = []
@@ -185,15 +202,15 @@ def vmhostlist(ip):
 	other = list( set(all) - (set(on)|set(off)))
 	return JSONResponse(content=jsonable_encoder({"on":on,"off":off, "all":all, "other":other, "STATUS":"OK", "MSG":err}))
 
-@app.get("/vmhosts/{ip}/cmd/{cmd}")
-async def executa(ip,cmd):
-	client = SSHClient()
-	client.set_missing_host_key_policy( AutoAddPolicy )
-	client.load_system_host_keys()
-	client.load_host_keys("/home/paiva/.ssh/known_hosts")
-	client.connect(ip,username='root',password=rootpw)
-	stdin, stdout, stderr = client.exec_command(cmd)
-	return JSONResponse(content=jsonable_encoder({"out":stdout.read(),"error":stderr.read()}))
+# @app.get("/vmhosts/{ip}/cmd/{cmd}")
+# async def executa(ip,cmd):
+# 	client = SSHClient()
+# 	client.set_missing_host_key_policy( AutoAddPolicy )
+# 	client.load_system_host_keys()
+# 	client.load_host_keys("/home/paiva/.ssh/known_hosts")
+# 	client.connect(ip,username='root',password=rootpw)
+# 	stdin, stdout, stderr = client.exec_command(cmd)
+# 	return JSONResponse(content=jsonable_encoder({"out":stdout.read(),"error":stderr.read()}))
 
 @app.get("/vmhosts/{ip}/release")
 async def catrelease(ip):
@@ -314,8 +331,8 @@ async def estadoHost(host_id, status):
 @app.post("/hosts/{host_id}")
 async def atualizaHost(item: HostInfo):
 
-		setexpression = " SET nome='%s', estado='%s', tipo='%s', so='%s', kernel='%s', cpu='%s', n=%d, mem=%d "%\
-			(item.nome, item.estado, item.tipo, item.so, item.kernel, item.cpu, item.n, item.mem)
+		setexpression = " SET nome='%s',comentario='%s', estado='%s', tipo='%s', so='%s', kernel='%s', cpu='%s', n=%d, mem=%d "%\
+			(item.nome, item.comentario, item.estado, item.tipo, item.so, item.kernel, item.cpu, item.n, item.mem)
 
 		if item.hospedeiro:
 			setexpression+= ", hospedeiro=%d"%(item.hospedeiro)

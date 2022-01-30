@@ -37,19 +37,28 @@ class HostLine(html.DIV):
 		botaoHost.className = self.cssBotao
 		botaoHost.style = {"width":"40%"}
 		botaoHost.target = "infoarea"
-		botaoHost.bind("click", self.hostinfo)
+		botaoHost.bind("click", self.maqinfo)
 		botaoHost.hostid =h["id"] # "/hosts/"+str(h["id"])
 
-		botaoIpmi = html.A("IPMI")
-		botaoIpmi.className = self.cssBotao
-		botaoIpmi.classList.add("w3-black")
-		botaoIpmi.target="_blank"
+		if h["tipo"]!='V':
+			botaoIpmi = html.A("IPMI")
+			botaoIpmi.className = self.cssBotao
+			botaoIpmi.classList.add("w3-teal")
 
-		for n in h["redes"]:
-			if h["redes"][n] == "ipmi":
-				botaoIpmi.href = "http://"+n
-				break
-
+			botaoIpmi.target="_blank"
+			# tt = html.SPAN(Class="w3-text w3-tag")
+			# tt.style = {"position":"absolute","left":"0","bottom":"18px"}
+			for n in h["redes"]:
+				if h["redes"][n] == "ipmi":
+					botaoIpmi.href = "http://"+n
+					# tt.innerHTML=n
+					break
+			# botaoIpmi<=tt
+		else:
+			botaoIpmi = html.A("VM")
+			botaoIpmi.className = self.cssBotao
+			botaoIpmi.classList.add("w3-black")
+			botaoIpmi.bind("click",self.hostinfo)
 		tagTipo=TipoHost(h, True)
 
 		self.estadoHost = html.SPAN()
@@ -87,6 +96,7 @@ class HostLine(html.DIV):
 
 		if d["power"]!=self.hostdic["estado"]:
 			self.bloqueia.setmsg("Alterando status para: "+estadoText)
+			ajax.put("/hosts/%s/powerstatus/%s"%(self.hostdic["id"],d["power"]))
 			return
 		else:
 			self.bloqueia.dismiss(0)
@@ -96,10 +106,12 @@ class HostLine(html.DIV):
 			self.estadoHost.classList.add("w3-green")
 		else:
 			self.estadoHost.classList.add("w3-grey")
-
-
+	def maqinfo(self, ev):
+		# NodeInfo(ev.currentTarget.hostid)
+		NodeInfo(self.hostdic['id'])
 	def hostinfo(self, ev):
-		NodeInfo(ev.currentTarget.hostid)
+		# NodeInfo(ev.currentTarget.hostid)
+		NodeInfo(self.hostdic['hospedeiro'])
 	def vmstate(self,ev):
 		document["infoarea"].innerHTML=""
 		document["infoarea"] <= EstadoVM(ev.currentTarget.hostinfo)
@@ -273,6 +285,7 @@ class NodeInfo(html.DIV):
 			self.carrega()
 		else:
 			self.hostid = h["id"]
+			self.loc = "/hosts/"+str(h["id"])
 			self.onLoadInfo(h)
 	def carrega(self):
 		ajax.get(self.loc, oncomplete=self.onLoadInfo)
@@ -296,6 +309,8 @@ class NodeInfo(html.DIV):
 		form <= HostLine(self.dadoshost)
 		self.nome = EntraTexto("Nome",self.dadoshost["nome"])
 		form <= self.nome
+		self.comentario = EntraTexto("Comentário",self.dadoshost["comentario"])
+		form <= self.comentario
 		self.cposo = EntraTexto("Sistema operacional",self.dadoshost["so"])
 		form <= self.cposo
 		self.kernel = EntraTexto("Kernel",self.dadoshost["kernel"])
@@ -341,6 +356,7 @@ class NodeInfo(html.DIV):
 			self.appendChild(EstadoVM(self.dadoshost))
 	def editar(self, ev):
 		self.nome.enable()
+		self.comentario.enable()
 		self.cposo.enable()
 		self.kernel.enable()
 		self.cpu.enable()
@@ -356,7 +372,7 @@ class NodeInfo(html.DIV):
 		self.editBtn.bind("click", self.salvar)
 		self.cancelBtn.style = {"display":"block"}
 	def alterado(self):
-		return self.nome.alterado or self.cposo.alterado or self.kernel.alterado or self.cpu.alterado or self.n.alterado or \
+		return self.nome.alterado or self.comentario.alterado or self.cposo.alterado or self.kernel.alterado or self.cpu.alterado or self.n.alterado or \
 			self.mem.alterado or self.estado.alterado
 	def salvar(self, ev):
 		if not self.alterado():
@@ -365,6 +381,7 @@ class NodeInfo(html.DIV):
 			return
 		dados = {"hostid": self.hostid,
 				"nome" :  self.nome.valor(),
+				"comentario" : self.comentario.valor(),
 				"so" : self.cposo.valor(),
 				"estado" : self.estado.valor(),
 				"tipo" : self.tipo.valor(),
@@ -392,7 +409,6 @@ class NodeInfo(html.DIV):
 class ListaInterfaces(html.DIV):
 	def __init__(self, hostnode):     #loc, h):
 		html.DIV.__init__(self)
-		# self <= html.LABEL("Interfaces:")
 		self.interfaces = hostnode.dadoshost["redes"]
 		self.hid =  hostnode.dadoshost["id"]
 		self.loc = "/hosts/"+str(hostnode.dadoshost["id"])
@@ -407,6 +423,8 @@ class ListaInterfaces(html.DIV):
 		self.ifaceTags = []
 		self.ifaceDdowns = []
 		for ip in self.interfaces:
+			if self.interfaces[ip]=="ipmi":
+				continue
 			# self <= html.BR()
 			tag = html.BUTTON(Class = "w3-button")
 			#tag.classList =  # w3-tag"
@@ -414,15 +432,17 @@ class ListaInterfaces(html.DIV):
 			tag.innerHTML = ip
 			tag.classList.add(dredesCor[  self.interfaces[ip]  ])
 
+			tag.bind("click", self.clickIP)
+
 			delif = html.A(Class="w3-bar-item w3-button")
 			delif.innerHTML="Remover interface"
 			delif.ip = ip
 			delif.bind("click", self.netdevRemove)
 
-			uname = html.A(Class="w3-bar-item w3-button")
-			uname.innerHTML="uname"
-			uname.ip = ip
-			uname.bind("click", self.getUname)
+			# uname = html.A(Class="w3-bar-item w3-button")
+			# uname.innerHTML="uname"
+			# uname.ip = ip
+			# uname.bind("click", self.getUname)
 
 			release = html.A(Class="w3-bar-item w3-button")
 			release.innerHTML="Dist release"
@@ -433,7 +453,7 @@ class ListaInterfaces(html.DIV):
 			dropdown <= tag
 			dropdownitems = html.DIV(Class="w3-dropdown-content w3-bar-block w3-card-4")
 			dropdownitems <= delif
-			dropdownitems <= uname
+			# dropdownitems <= uname
 			dropdownitems <= release
 			dropdown <= dropdownitems
 			dropdown.style = {"pointer-events": "none"}
@@ -441,6 +461,8 @@ class ListaInterfaces(html.DIV):
 			self <= dropdown
 			self.ifaceTags.append(tag)
 			self.ifaceDdowns.append(dropdown)
+	def clickIP(self,ev):
+		alert(ev.currentTarget.innerHTML)
 
 	def novoNetDev(self, ev):
 		AddNet(self.loc)
@@ -458,18 +480,6 @@ class ListaInterfaces(html.DIV):
 			ajax.delete("/netdev/%s"%(ev.currentTarget.innerHTML))
 			InfoDialog("Status","Interface removida")
 		document["infoarea"].innerHTML= ""
-	def getUname(self,ev):
-		ajax.get("/vmhosts/%s/cmd/uname -a"%ev.currentTarget.ip, oncomplete=self.dispUname)
-	def dispUname(self,req):
-		if req.json["error"]=="":
-			uname = req.json["out"].split(' ')[2]
-			if uname != self.hostnode.kernel.valor():
-				Alerta("Alterado campo Kernel de "+ self.hostnode.kernel.valor()+" para "+uname)
-				self.hostnode.kernel.setavalor(uname)
-				self.hostnode.kernel.classList.add( "w3-border")
-				self.hostnode.kernel.classList.add( "w3-border-red")
-
-		else: Alerta(req.json["error"])
 	def getRelease(self,ev):
 		ajax.get("/vmhosts/%s/release"%ev.currentTarget.ip, oncomplete=self.dispRelease)
 	def dispRelease(self,req):
@@ -697,14 +707,45 @@ RHEIGHT = "2500px"
 
 
 class Rack( html.DIV ):
-    def __init__(self):
-        # html.DIV.__init__(self, Class="w3-container w3-grey ") #, style={ "height":"500px"; "width":"100"} )
-# <nav class="w3-sidenav w3-white w3-card-2" style="width:25%">
-		html.DIV.__init__(self, Class="w3-sidenav w3-grey w3-card-2")
+	def __init__(self):
+		# html.DIV.__init__(self, Class="w3-container w3-grey ") #, style={ "height":"500px"; "width":"100"} )
+		# <nav class="w3-sidenav w3-white w3-card-2" style="width:25%">
+		html.DIV.__init__(self, Class="w3-sidenav w3-grey") # w3-card-2")
 		self.style = {"width": RWIDTH, "margin":0, "padding":0 } #, "position":"absolute"}
-
-    def insereUnidade(self, u ):
-        self.prepend(u)
+		self.hd={}
+		ajax.get("/hosts", oncomplete=self.dataLoaded)
+	def dataLoaded(self, res):
+		hostlist = res.json
+		for item in hostlist:
+			self.hd[item["id"]]=item
+		self.carregaUnidades()
+	def carregaUnidades(self):
+		self <= Unidade(1, "RACK DC-Unifesp")
+		self <= Unidade(1, "RACK 1")
+		self <= Unidade(1, [Modulo(self.hd[525])])
+		self <= Unidade(1, [Modulo(self.hd[524])])
+		self <= Unidade(1, [Modulo(self.hd[523])])
+		self <= Unidade(1, [Modulo(self.hd[522])])
+		self <= Unidade(1, [Modulo(self.hd[521])])
+		self <= Unidade(1, [Modulo(self.hd[567])])
+		self <= Unidade(1, "DISPLAY")
+		self <= Unidade(2,[Modulo(self.hd[558]),Modulo(self.hd[559]),Modulo(self.hd[560]),Modulo(self.hd[561])])
+		self <= Unidade(2, [Modulo(self.hd[563])])
+		self <= Unidade(2, [Modulo(self.hd[562])])
+		self <= Unidade(1, "Aruba-237")
+		self <= Unidade(1, "Aruba-236")
+		self <= Unidade(2,[Modulo(self.hd[554]),Modulo(self.hd[555]),Modulo(self.hd[556]),Modulo(self.hd[557])])
+		self <= Unidade(2,[Modulo(self.hd[550]),Modulo(self.hd[551]),Modulo(self.hd[552]),Modulo(self.hd[553])])
+		self <= Unidade(2,[Modulo(self.hd[546]),Modulo(self.hd[547]),Modulo(self.hd[548]),Modulo(self.hd[549])])
+		self <= Unidade(2,[Modulo(self.hd[542]),Modulo(self.hd[543]),Modulo(self.hd[544]),Modulo(self.hd[545])])
+		self <= Unidade(2,[Modulo(self.hd[538]),Modulo(self.hd[539]),Modulo(self.hd[540]),Modulo(self.hd[541])])
+		self <= Unidade(2,[Modulo(self.hd[534]),Modulo(self.hd[535]),Modulo(self.hd[536]),Modulo(self.hd[537])])
+		self <= Unidade(2,[Modulo(self.hd[530]),Modulo(self.hd[531]),Modulo(self.hd[532]),Modulo(self.hd[533])])
+		self <= Unidade(2,[Modulo(self.hd[526]),Modulo(self.hd[527]),Modulo(self.hd[528]),Modulo(self.hd[529])])
+		self <= Unidade(1, "RACK 2")
+		self <= Unidade(1, [Modulo(self.hd[565])])
+		self <= Unidade(1, [Modulo(self.hd[564])])
+		self <= Unidade(2, [Modulo(self.hd[566])])
 
 
 class Unidade(html.DIV ):
@@ -717,7 +758,7 @@ class Unidade(html.DIV ):
         self.style = { "height":"%dpx"%(UHEIGHT*h), "width": RWIDTH}
 
         if type(mods)==str:
-            self<= Modulo(mods)
+			self<= Modulo(mods)
         elif len(self.mods)==1:
             self<=  self.mods[0]
         elif len(self.mods)==4:
@@ -733,22 +774,22 @@ class Unidade(html.DIV ):
             self <= cel2
 
 class Modulo(html.DIV):
-    def __init__(self, id=None):
-        html.DIV.__init__(self)  #, Class="w3-panel w3-cell w3-red")
-        self.classList.add("w3-border")
-        self.classList.add("w3-tiny")
-        self.style = { "margin":0, "padding":0, "height":"100%"}#,   "height": "100vh"}
-        # self.innerHTML="undef"
-
-        if type(id)==str:
-            self.innerHTML=id
-            self.classList.add("w3-light-grey")
-        elif id!=None:
-			self.id = "mod-%d"%id
-			ajax.get("/hosts/%d"%id, oncomplete=self.dataLoaded)
-
-    def dataLoaded(self,res):
-		self.h = res.json
+	def __init__(self, hinfo=None):
+		html.DIV.__init__(self)  #, Class="w3-panel w3-cell w3-red")
+		self.classList.add("w3-border")
+		self.classList.add("w3-tiny")
+		self.style = { "margin":0, "padding":0, "height":"100%"}#,   "height": "100vh"}
+		# self.innerHTML="undef"
+		self.h = hinfo
+		if type(hinfo)==str:
+			self.innerHTML=hinfo
+			self.classList.add("w3-light-grey")
+		elif self.h!=None:
+			self.id = "mod-%d"%self.h["id"]
+			# ajax.get("/hosts/%d"%id, oncomplete=self.dataLoaded)
+			self.refresh()
+	def refresh(self):
+		# self.h = res.json
 		self.innerHTML = str(self.h["id"]) + " - " + self.h["nome"]
 		# self.cartao <= html.DIV(str(h), Class="w3-dropdown-content w3-card-4")
 		self.classList.add("w3-hover-blue")
@@ -757,64 +798,36 @@ class Modulo(html.DIV):
 		elif  self.h["estado"]=='-1':
 		    self.classList.add("w3-yellow")
 		self.bind("click", self.mostraHost)
-
-    def mostraHost(self,ev):
-        NodeInfo(self.h)
-        # p =html.SPAN("X",str(h["id"]),Class="w3-dropdown-hover w3-panel")
-        # p<= html.DIV(str(h), Class="w3-dropdown-content w3-card-4")
-        # self <= p
+	def mostraHost(self,ev):
+		NodeInfo(self.h["id"])
 
 class Busca(html.DIV):
 	def __init__(self):
 		html.DIV.__init__(self)
 		PegaTexto("Nome do nó", self.buscaNome)
 	def buscaNome(self, nome):
-		Alerta()
+		ajax.get("/busca/%s"%nome, oncomplete=self.retBusca)
+	def retBusca(self,res):
+		alert(str(res.json))
+		document["infoarea"].innerHTML=""
+
+		for h in  res.json:
+		 	self <= HostLine(h)
+		document["infoarea"]<=self
 
 def buscaNo(ev):
-	# nome = prompt("Entre com nome do nó")
 	Busca()
-	# alert(ev)
 
-
-# PegaTexto("Nome do host",buscaNo)
 rack = Rack()
-#/ rack.insereUnidade(Unidade(2,1)
-
-rack.insereUnidade(Unidade(2,[Modulo(526),Modulo(527),Modulo(528),Modulo(529)]))
-rack.insereUnidade(Unidade(2,[Modulo(530),Modulo(531),Modulo(532),Modulo(533)]))
-rack.insereUnidade(Unidade(2,[Modulo(534),Modulo(535),Modulo(536),Modulo(537)]))
-rack.insereUnidade(Unidade(2,[Modulo(538),Modulo(539),Modulo(540),Modulo(541)]))
-rack.insereUnidade(Unidade(2,[Modulo(542),Modulo(543),Modulo(544),Modulo(545)]))
-rack.insereUnidade(Unidade(2,[Modulo(546),Modulo(547),Modulo(548),Modulo(549)]))
-rack.insereUnidade(Unidade(2,[Modulo(550),Modulo(551),Modulo(552),Modulo(553)]))
-rack.insereUnidade(Unidade(2,[Modulo(554),Modulo(555),Modulo(556),Modulo(557)]))
-rack.insereUnidade(Unidade(1, "Aruba-236"))
-rack.insereUnidade(Unidade(1, "Aruba-237"))
-rack.insereUnidade(Unidade(2, [Modulo(562)]))
-rack.insereUnidade(Unidade(2, [Modulo(563)]))
-rack.insereUnidade(Unidade(2,[Modulo(558),Modulo(559),Modulo(560),Modulo(561)]))
-rack.insereUnidade(Unidade(1, "DISPLAY"))
-rack.insereUnidade(Unidade(1, [Modulo(567)]))
-rack.insereUnidade(Unidade(1, [Modulo(521)]))
-rack.insereUnidade(Unidade(1, [Modulo(522)]))
-rack.insereUnidade(Unidade(1, [Modulo(523)]))
-rack.insereUnidade(Unidade(1, [Modulo(524)]))
-rack.insereUnidade(Unidade(1, [Modulo(525)]))
-
-rack.insereUnidade(Unidade(2, [Modulo(566)]))
-rack.insereUnidade(Unidade(1, [Modulo(564)]))
-rack.insereUnidade(Unidade(1, [Modulo(565)]))
-
+rack.style={"display": "table-cell"}
 
 cabecalho = html.DIV("DCP-DIS-EPM-Unifesp", id="cabecalho", Class="w3-light-grey")
-cabecalho.style={"width":"100%"}
+cabecalho.style={"width":"100%"}  #,"position":"fixed"}
 busca = html.I(Class="fa fa-search w3-right")
 busca.bind("click", buscaNo)
 cabecalho<=busca
-main = html.DIV()
-main.style={"display": "table-row"}
-rack.style={"display": "table-cell"}
+main = html.DIV(id="main")
+main.style={"display": "table-row"}     #, "overflow": "hidden"}
 infoarea = html.DIV(id="infoarea", Class="w3-container w3-light-grey")
 infoarea.style = {"display": "table-cell"}  #{"margin-left":"220px"}
 # infoarea.style = {"flex-grow":"1"}
