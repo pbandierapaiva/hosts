@@ -247,9 +247,6 @@ async def catrelease(ip):
 		ret["mem"] = " ".join(li.split()).split()[1]
 	except:
 		ret['status']+="CPU " + str( stderr.read() )
-
-
-
 	return JSONResponse(content=jsonable_encoder(ret))
 
 @app.put("/netdev")

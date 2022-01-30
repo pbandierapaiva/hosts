@@ -229,6 +229,15 @@ def hostinfo(ip, hostid):
 				db.cursor.execute(inscmd)
 				db.commit()
 
+			stdin, stdout, stderr = client.exec_command('virsh dumpxml %s '%(vm))
+			linhas = stdout.readlines()
+			for i in linhas:
+				if "type='vnc'" in i:
+					port = re.search("port='.*'", i).group().split("'")[1]
+					updcmd = """UPDATE maq set vncport=%s WHERE nome='%s' and hospedeiro=%s"""%(port,vm,hostid)
+					# print(updcmd)
+					db.cursor.execute(updcmd)
+					db.commit()
 	return ret
 	# {"on":on,"off":off, "all":all, "other":other, "STATUS":"OK", "MSG":err}
 
