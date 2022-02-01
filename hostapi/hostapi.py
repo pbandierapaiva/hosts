@@ -7,6 +7,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
+from fastapi.responses import RedirectResponse
 
 import mariadb
 import re
@@ -51,9 +52,7 @@ class HostInfo(BaseModel):
 
 @app.get("/")
 async def root():
-	#return {"message": "Hello World"}
-	html_content = open("static/host.html").read()
-	return HTMLResponse(content=html_content)
+    return RedirectResponse("/web/host.html")
 
 @app.get("/hosts/{hostid}/powerstatus")
 async def hostinfoPowerStatus(hostid):

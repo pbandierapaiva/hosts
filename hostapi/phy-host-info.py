@@ -154,6 +154,7 @@ def hostinfo(ip, hostid):
 	ret = {'so':'','kernel':'','STATUS':'OK'}
 	client = SSHClient()
 	client.load_system_host_keys()
+	# client.set_missing_host_key_policy(policy)
 	client.load_host_keys("/home/paiva/.ssh/known_hosts")
 	client.connect(ip,username='root',password=rootpw)
 	ret['MESSAGE']=""
