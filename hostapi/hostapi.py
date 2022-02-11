@@ -324,6 +324,40 @@ async def estadoHost(host_id, status):
 		return JSONResponse(content=jsonable_encoder({'STATUS':'ERROR', 'MSG':ex.args}))
 	return JSONResponse(content=jsonable_encoder({"status":"OK"}))
 
+@app.get("/hosts/{hostid}/ambient")
+async def hostinfoPowerStatus(hostid):
+	db = DB()
+
+	db.cursor.execute("Select netdev.ip, maq.altsec from maq,netdev where maq.id=netdev.maq AND maq.id='"+hostid+"' AND netdev.rede='ipmi'")
+	h = db.cursor.fetchone()
+
+	if not h:
+		o = {"hostid":hostid,"status":"ERRO", "msg":"Não encontrado no banco" }
+		return JSONResponse(content=jsonable_encoder(o))
+	ip = h["ip"]
+	if h["altsec"]:
+		executa = ['ipmitool','-c', '-I','lanplus','-H', ip, '-U', 'admin', '-P', h["altsec"], "sensor", "get", "'Ambient Temp'"]
+	else:
+		executa = ['ipmitool','-c', '-I','lanplus','-H', ip, '-U', 'admin', '-P', rootpw, "sensor", "get", "'Ambient Temp'"]
+
+	output = subprocess.Popen(executa)
+	#, capture_output=True, text=True,	timeout=180	)
+	output.wait(timeout=180)
+	o = {"hostid":hostid,"ip":ip}
+	if output.returncode==1:
+		o["status"]='ERRO'
+		o["msg"]= output.stderr
+	else:
+		o["status"]='OK'
+		mensagem="<pre>"
+		for i in output.stdout:
+			mensagem += str(output.stdout)
+		mensagem+="</pre>"
+		o["msg"]= mensagem
+	return mensagem
+	# return JSONResponse(content=jsonable_encoder(o))
+
+
 @app.post("/hosts/{host_id}")
 async def atualizaHost(item: HostInfo):
 
