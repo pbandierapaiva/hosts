@@ -16,7 +16,7 @@ class DB:
 		self.cursor= self.con.cursor(dictionary=True)
 	def commit(self):
 		self.con.commit()
-		
+
 def allHosts():
 	db = DB()
 
@@ -35,8 +35,8 @@ def allHosts():
 		ifes={}
 		for iface in allIf:
 			ifes[iface['rede']]=iface['ip']
-			
-		print("IPMI: ",ifes['ipmi'])
+
+		print("IPMI: ",ifes['ipmi'],"\n",ifes,"\n\n")
 		for rede in ifes:
 			if rede!='ipmi':
 				print(ifes[rede])
@@ -54,7 +54,7 @@ def fetchVMs(ip):
 	status = True
 	for d in conn.listAllDomains():  #libvirt.VIR_CONNECT_LIST_DOMAINS_ACTIVE):
 		print(d.name(), d.isActive(), d.isPersistent())
-		
+
 		raiz= ET.fromstring(d.XMLDesc())
 		# print(d.XMLDesc())
 		# for x in raiz.findall('mac'):
@@ -69,7 +69,5 @@ def fetchVMs(ip):
 							if el3.tag=='vlan':
 								print("\t",el3.text)
 	return status
-		
-allHosts()		
 
-		
+allHosts()
