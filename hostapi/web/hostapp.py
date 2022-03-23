@@ -439,11 +439,6 @@ class ListaInterfaces(html.DIV):
 			delif.ip = ip
 			delif.bind("click", self.netdevRemove)
 
-			# uname = html.A(Class="w3-bar-item w3-button")
-			# uname.innerHTML="uname"
-			# uname.ip = ip
-			# uname.bind("click", self.getUname)
-
 			release = html.A(Class="w3-bar-item w3-button")
 			release.innerHTML="Dist release"
 			release.ip = ip
@@ -479,7 +474,8 @@ class ListaInterfaces(html.DIV):
 		if confirm("ATENÇÃO: Remover interface "+ev.currentTarget.ip+ "?"):
 			ajax.delete("/netdev/%s"%(ev.currentTarget.innerHTML))
 			InfoDialog("Status","Interface removida")
-		document["infoarea"].innerHTML= ""
+		NodeInfo(self.hid)
+		#document["infoarea"].innerHTML= ""
 	def getRelease(self,ev):
 		ajax.get("/vmhosts/%s/release"%ev.currentTarget.ip, oncomplete=self.dispRelease)
 	def dispRelease(self,req):
@@ -679,8 +675,7 @@ class AddNet(html.DIV):
 			Alerta("Interface adicionada","Rede")
 		else:
 			Alerta(req.json["status"])
-		#self.parentNode.parentNode.carrega()
-		document["infoarea"].innerHTML= ""
+		NodeInfo(self.maq)
 	def show(self):
 		self.style.display = "block"
 	def fecha(self, ev):
@@ -708,8 +703,6 @@ RHEIGHT = "2500px"
 
 class Rack( html.DIV ):
 	def __init__(self):
-		# html.DIV.__init__(self, Class="w3-container w3-grey ") #, style={ "height":"500px"; "width":"100"} )
-		# <nav class="w3-sidenav w3-white w3-card-2" style="width:25%">
 		html.DIV.__init__(self, Class="w3-sidenav w3-grey") # w3-card-2")
 		self.style = {"width": RWIDTH, "margin":0, "padding":0 } #, "position":"absolute"}
 		self.hd={}
@@ -779,19 +772,15 @@ class Modulo(html.DIV):
 		self.classList.add("w3-border")
 		self.classList.add("w3-tiny")
 		self.style = { "margin":0, "padding":0, "height":"100%"}#,   "height": "100vh"}
-		# self.innerHTML="undef"
 		self.h = hinfo
 		if type(hinfo)==str:
 			self.innerHTML=hinfo
 			self.classList.add("w3-light-grey")
 		elif self.h!=None:
 			self.id = "mod-%d"%self.h["id"]
-			# ajax.get("/hosts/%d"%id, oncomplete=self.dataLoaded)
 			self.refresh()
 	def refresh(self):
-		# self.h = res.json
 		self.innerHTML = str(self.h["id"]) + " - " + self.h["nome"]
-		# self.cartao <= html.DIV(str(h), Class="w3-dropdown-content w3-card-4")
 		self.classList.add("w3-hover-blue")
 		if self.h["estado"]=='1':
 		    self.classList.add("w3-green")
