@@ -94,7 +94,7 @@ async def hostinfoPowerStatus(hostid,estado):
 		db.cursor.execute("UPDATE maq SET estado='%s' WHERE id=%s"%(estado,hostid))
 		print("UPDATE maq SET estado='%s' WHERE id=%s"%(estado,hostid))
 		db.commit()
-	except:
+	except: 
 		print("ERRO DE UPDATE")
 
 @app.get("/busca/{nome}")
@@ -104,7 +104,8 @@ async def hostsearch(nome):
 	db.cursor.execute("Select * from maq where nome LIKE '%"+nome+"%'")
 	hostlist = db.cursor.fetchall()
 	if not hostlist:
-		return None
+		return JSONResponse(content=jsonable_encoder([]))
+
 	for h in hostlist:
 		db.cursor.execute("Select rede,ip from netdev where maq='"+str(h['id'])+"'")
 		interfaces = db.cursor.fetchall()
