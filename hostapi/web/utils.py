@@ -5,6 +5,14 @@ from browser.widgets.dialog import InfoDialog, Dialog
 
 from hostinfo import *
 
+class Cabecalho(html.DIV):
+	def __init__(self):
+		html.DIV.__init__(self, "DCP-DIS-EPM-Unifesp", id="cabecalho",
+			Class="w3-bar w3-card-2 w3-grey notranslate")
+		busca = html.A(Class="w3-bar-item w3-button w3-hover-none w3-left w3-padding-4  w3-right")
+		busca <= html.I(Class="fa fa-search")
+		busca.bind("click", buscaNo)
+
 
 class Alerta(html.DIV):
 	def __init__(self, msg, tit="Atenção"):

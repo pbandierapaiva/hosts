@@ -1,3 +1,4 @@
+#!bin/python
 #
 # Conecta em todas as máquinas físicas marcadas como Host e resgata VMs e seus estados
 #

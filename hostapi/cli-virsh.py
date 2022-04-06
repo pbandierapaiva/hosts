@@ -1,3 +1,4 @@
+#!bin/python
 ##
 ## Utiliza lib virsh para acessar dados de guests
 ##
@@ -18,6 +19,7 @@ class DB:
 		self.con.commit()
 
 def allHosts():
+	print("Conectando todos os hospedeiros registrados...")
 	db = DB()
 
 	# somente Hosts que não são VMs 'V'
@@ -41,7 +43,7 @@ def allHosts():
 			if rede!='ipmi':
 				print(ifes[rede], file=output)
 				if( fetchVMs( ifes[rede]) ): break
-
+	print("Operação concluída")
 
 def fetchVMs(ip):
 	status=False

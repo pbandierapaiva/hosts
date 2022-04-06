@@ -322,7 +322,7 @@ class EstadoVM(html.DIV):
 		ajax.get("/hosts/%s/vm"%self.hostid, oncomplete=self.onLoadRegisteredVMs)
 	def onLoadRegisteredVMs(self,res):
 		self.vms = res.json
-		alert(str(self.vms))
+		# alert(str(self.vms))
 		for vm in self.vms:
 			if vm["estado"]=='1':
 				self <= NodeInfoLine(vm)
