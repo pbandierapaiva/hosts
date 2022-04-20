@@ -27,18 +27,18 @@ def allHosts():
 
 	d = []
 	for li in todoshostsdb:
-		print("\n",li, file=output)
+		print("\n",li)
 		db.cursor.execute("SELECT ip,rede FROM netdev WHERE maq='%s'"%li['id'])
 		allIf =  db.cursor.fetchall()
 		ifes={}
 		for iface in allIf:
 			ifes[iface['rede']]=iface['ip']
 
-		print("IPMI: ",ifes['ipmi'],"\n",ifes,"\n\n", file=output)
+		print("IPMI: ",ifes['ipmi'],"\n",ifes,"\n\n")
 		for rede in ifes:
 			print('\n----')
 			if rede!='ipmi':
-				print(ifes[rede], file=output)
+				print(ifes[rede])
 				if( fetchUptime( ifes[rede]) ): break
 
 
