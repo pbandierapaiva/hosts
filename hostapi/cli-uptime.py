@@ -1,11 +1,9 @@
 ##
-## Utiliza libvirt para acessar dados de guests
+## Utiliza ssh root nos hosts para verificar uptime
 ##
 
-import libvirt
+# import libvirt
 import sys
-# import xml
-import xml.etree.ElementTree as ET
 
 import mariadb
 from conexao import conexao, rootpw
@@ -38,33 +36,14 @@ def allHosts():
 
 		print("IPMI: ",ifes['ipmi'],"\n",ifes,"\n\n", file=output)
 		for rede in ifes:
+			print('\n----')
 			if rede!='ipmi':
 				print(ifes[rede], file=output)
-				if( fetchVMs( ifes[rede]) ): break
+				if( fetchUptime( ifes[rede]) ): break
 
 
-def fetchVMs(ip):
+def fetchUptime(ip):
 	status=False
-
-	try:
-		conn = libvirt.open(f'qemu+ssh://root@{ip}/system') #,auth,0)
-	except libvirt.libvirtError as e:
-		print(repr(e),file=sys.stderr)
-		return status
-	status = True
-	for d in conn.listAllDomains():  #libvirt.VIR_CONNECT_LIST_DOMAINS_ACTIVE):
-		print(d.name(), d.isActive(), d.isPersistent(), file=output)
-		raiz= ET.fromstring(d.XMLDesc())
-		for el in raiz:
-			if el.tag=='devices':
-				for el2 in el:
-					if el2.tag=='interface':
-						for el3 in el2:
-							if el3.tag=='mac':
-								print("\t",el3.attrib['address'], file=output)
-	output.flush()
-	return status
-
-output=open("output.log","w+")
+	# print(ip)
 
 allHosts()

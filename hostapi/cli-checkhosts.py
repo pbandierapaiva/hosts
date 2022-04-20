@@ -1,8 +1,8 @@
 ##
-## Utiliza libvirt para acessar dados de guests
+## Utiliza lib ipmi para acessar dados de hosts
 ##
 
-import libvirt
+# import libvirt
 import sys
 # import xml
 import xml.etree.ElementTree as ET
