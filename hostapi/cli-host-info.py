@@ -22,7 +22,7 @@ def allHosts():
 
 	# somente Hosts que não são VMs 'V'
 	# db.cursor.execute("Select id,nome,estado,tipo,cpu,n,mem from maq where tipo!='V'")
-	db.cursor.execute("Select id,nome,estado,tipo,cpu,n,mem from maq where tipo='H'")
+	db.cursor.execute("Select id,nome,estado,tipo,cpu,n,mem from maq where tipo!='V'")
 	todoshostsdb = db.cursor.fetchall()
 
 	contavm = 0
@@ -38,8 +38,6 @@ def allHosts():
 		db.cursor.execute("Select netdev.ip, netdev.rede, maq.altsec, maq.estado from maq,netdev where maq.id=netdev.maq AND maq.id='%d'"%hostid)
 		hosts = db.cursor.fetchall()
 
-		# db.cursor.execute("Select rede,ip from netdev where maq='"+str(li['id'])+"'")
-		# interfaces = db.cursor.fetchall()
 		ipmi = ''
 		li['redes'] = []
 		# for iface in interfaces:
@@ -84,60 +82,51 @@ def allHosts():
 		"""%(ret["cpu"],ret["n"],ret["mem"],ret["kernel"],ret["so"],hostid)
 
 		try:
-			# print("inserindo "+str(ret))
 			status = db.cursor.execute(updcmd)
 		except:
 			print("Erro atualização de BD >>"+updcmd)
-			input("	")
+			input("Pausado...")
 		db.commit()
 
-		selcmd = "SELECT * FROM maq WHERE hospedeiro='%s'"%hostid
-		db.cursor.execute(selcmd)
-		vms = db.cursor.fetchall()
-
-		for vm in vms:
-			if vm["nome"] not in ret["all"]:
-				input("\t*** VM NOVA encontrada: %s %s"%(vm["nome"],vm["id"]))
-				# sql = "UPDATE maq SET estado='%s' WHERE id=%s"%(vm["estado"],vm["id"])
-				sql = """INSERT INTO maq (nome, estado, tipo, hospedeiro) VALUES ('%s','%s','%s','%s')
-					"""%(vm["nome"],vm["estado"],vm["tipo"],hostid)
-				db.cursor.execute(selcmd)
-				db.commit()
-
-			if (vm["estado"]=='0' and vm["nome"] not in ret["off"] ) or \
-				(vm["estado"]=='1' and vm["nome"] not in ret["on"] ) or \
-				(vm["estado"]=='-1' and vm["nome"] not in ret["other"] ):
-				input("\t*** Estado alterado VM:  %s %s ( %s )"%(vm["nome"],vm["id"],vm["estado"]))
-
-				sql = "UPDATE maq SET estado='%s' WHERE id=%s"%(vm["estado"],vm["id"])
-				db.cursor.execute(selcmd)
-				db.commit()
-
-
-			print("VM "+vm["nome"] + " Ok")
+		# selcmd = "SELECT * FROM maq WHERE hospedeiro='%s'"%hostid
+		# db.cursor.execute(selcmd)
+		# vms = db.cursor.fetchall()
+		#
+		# for vm in vms:
+		# 	if vm["nome"] not in ret["all"]:
+		# 		input("\t*** VM NOVA encontrada: %s %s"%(vm["nome"],vm["id"]))
+		# 		# sql = "UPDATE maq SET estado='%s' WHERE id=%s"%(vm["estado"],vm["id"])
+		# 		sql = """INSERT INTO maq (nome, estado, tipo, hospedeiro) VALUES ('%s','%s','%s','%s')
+		# 			"""%(vm["nome"],vm["estado"],vm["tipo"],hostid)
+		# 		db.cursor.execute(selcmd)
+		# 		db.commit()
+		#
+		# 	if (vm["estado"]=='0' and vm["nome"] not in ret["off"] ) or \
+		# 		(vm["estado"]=='1' and vm["nome"] not in ret["on"] ) or \
+		# 		(vm["estado"]=='-1' and vm["nome"] not in ret["other"] ):
+		# 		input("\t*** Estado alterado VM:  %s %s ( %s )"%(vm["nome"],vm["id"],vm["estado"]))
+		#
+		# 		sql = "UPDATE maq SET estado='%s' WHERE id=%s"%(vm["estado"],vm["id"])
+		# 		db.cursor.execute(selcmd)
+		# 		db.commit()
+		#
+		#
+		# 	print("VM "+vm["nome"] + " Ok")
 
 
 def ipmiInfo(ip,altsec=rootpw):
 	print("\tIPMI "+ip)
-	# if hostline["altsec"]:
 	executa = ['ipmitool','-c', '-I','lanplus','-H', ip, '-U', 'admin', '-P', altsec,'power','status']
-	# else:
-		# executa = ['ipmitool','-c', '-I','lanplus','-H', ip, '-U', 'admin', '-P', rootpw,'power','status']
-
 	output = subprocess.run(executa, capture_output=True, text=True	)
-
-		# o = {"hostid":hostid,"ip":ip}
 	if output.returncode==1:
 		return "-1"
 	else:
 		mensagem = str(output.stdout).strip()
-		# o["msg"]= mensagem
 		ultima = mensagem.split()[-1]
 		if str(ultima)=='on':
 			return "1"
 		else:
 			return "0"
-
 
 def hostinfo(ip, hostid):
 	client = SSHClient()
