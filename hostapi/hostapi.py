@@ -307,7 +307,7 @@ async def criaVM(i: HostInfo):
 		return JSONResponse(content=jsonable_encoder({'status':'ERROR: inserting into database'}))
 	return JSONResponse(content=jsonable_encoder({"data":i.hostid, "status":"OK"}))
 
-@app.post("/hosts/{host_id}/{status}")
+@app.post("/hosts/{host_id}/status/{status}")
 async def estadoHost(host_id, status):
 	if status not in ["on","off","other"]:
 		return JSONResponse(content=jsonable_encoder({"STATUS":"ERROR","MSG":"Status not on or off"}))
@@ -324,6 +324,20 @@ async def estadoHost(host_id, status):
 	except Exception as ex:
 		return JSONResponse(content=jsonable_encoder({'STATUS':'ERROR', 'MSG':ex.args}))
 	return JSONResponse(content=jsonable_encoder({"status":"OK"}))
+
+@app.post("/hosts/{host_id}/tipo/{tipo}")
+async def tipoMaq(host_id, tipo):
+	if tipo not in ["H","S","V"]:
+		return JSONResponse(content=jsonable_encoder({"STATUS":"ERROR","MSG":"Status not on or off"}))
+	sql = "UPDATE maq SET tipo='%s' WHERE id=%s"%(tipo,host_id)
+	db = DB()
+	try:
+		status = db.cursor.execute(sql)
+		db.commit()
+	except Exception as ex:
+		return JSONResponse(content=jsonable_encoder({'STATUS':'ERROR', 'MSG':ex.args}))
+	return JSONResponse(content=jsonable_encoder({"status":"OK"}))
+
 
 @app.get("/hosts/{hostid}/ambient")
 async def hostinfoPowerStatus(hostid):

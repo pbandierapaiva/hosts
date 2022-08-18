@@ -232,7 +232,8 @@ class NodeInfo(html.DIV):
 		self.mem.enable()
 
 		self.estado.enable()
-		self.tipo.disabled = False
+		# self.tipo.disabled = False
+		self.tipo.enableEdit()
 		self.listaInt.enableEdit()
 
 		self.editBtn.innerHTML = "Salvar"
@@ -373,11 +374,11 @@ class EstadoVM(html.DIV):
 
 		for rvm in self.vms:
 			if rvm["estado"]!="1" and rvm["nome"] in vmstatus["on"]:
-					ajax.post("/hosts/%s/on"%(rvm["id"]), oncomplete=self.statusChangeResult)
+					ajax.post("/hosts/%s/status/on"%(rvm["id"]), oncomplete=self.statusChangeResult)
 			if rvm["estado"]!="0" and rvm["nome"] in vmstatus["off"]:
-					ajax.post("/hosts/%s/off"%(rvm["id"]), oncomplete=self.statusChangeResult)
+					ajax.post("/hosts/%s/status/off"%(rvm["id"]), oncomplete=self.statusChangeResult)
 			if rvm["estado"]!="-1" and rvm["nome"] in vmstatus["other"]:
-					ajax.post("/hosts/%s/other"%(rvm["id"]), oncomplete=self.statusChangeResult)
+					ajax.post("/hosts/%s/status/other"%(rvm["id"]), oncomplete=self.statusChangeResult)
 
 		adefinir = liall - rvmall
 		for n in adefinir: # máquinas definidas nos servidores mas não no BD
@@ -413,7 +414,7 @@ class TipoHost(html.DIV):
 			self.style = {"width":"10%"}
 			self.classList = "w3-button w3-tiny w3-center w3-padding-small w3-border w3-round"
 		else:
-			self.classList = "w3-tag w3-margin w3-padding"
+			self.classList = "w3-tag w3-margin w3-padding w3-dropdown-hover"
 			self.style = {"width":"200px"}
 		self.disabled = True
 		self.hostinfo = h
@@ -424,11 +425,11 @@ class TipoHost(html.DIV):
 			if self.hostinfo["estado"]=='1':
 				self.classList.add("w3-blue")
 			else: self.classList.add("w3-grey")
-			self.bind("click",self.vmstate)
+			# self.bind("click",self.vmstate)
 		elif self.tipo=="S":  # Standalone
 			if mini:self.innerHTML = "S"
 			else:self.innerHTML = "Standalone"
-			self.classList.add("w3-teal")
+			self.classList.add("w3-cyan")
 		elif self.tipo=="V":  # Máq. virtual
 			if mini:self.innerHTML = "V"
 			else:self.innerHTML = "VM"
@@ -437,11 +438,33 @@ class TipoHost(html.DIV):
 			if mini:self.innerHTML = "??"
 			else:self.innerHTML = "desconhecido"
 			self.classList.add("w3-grey")
+
+		if not mini:
+			setH = html.A(Class="w3-bar-item w3-button")
+			setH.innerHTML="Host"
+			setH.bind("click", self.seth)
+
+			setS = html.A(Class="w3-bar-item w3-button")
+			setS.innerHTML="Standalone"
+			setS.bind("click", self.sets)
+
+			# self.dropdown =  html.DIV(Class="w3-dropdown-hover")
+			# dropdown <= self
+			dropdownitems = html.DIV(Class="w3-dropdown-content w3-bar-block w3-card-4")
+			dropdownitems <= setH
+			dropdownitems <= setS
+			self <= dropdownitems
+			self.style = {"pointer-events": "none"}
+
+			# self <= self.dropdown
+	def sets(self, ev):
+		ajax.post("/hosts/%s/tipo/S"%self.hostinfo["id"])
+	def seth(self, ev):
+		ajax.post("/hosts/%s/tipo/H"%self.hostinfo["id"])
 	def valor(self):
 		return self.tipo
-	def vmstate(self,ev):
-		document["infoarea"].innerHTML=""
-		document["infoarea"] <= EstadoVM(self.hostinfo)
+	def enableEdit(self):
+		self.style = {"pointer-events": "auto"}
 
 class ListaInterfaces(html.DIV):
 	def __init__(self, hostnode):     #loc, h):
