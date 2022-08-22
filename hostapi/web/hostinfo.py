@@ -91,7 +91,7 @@ class HostLine(html.DIV):
 
 	def updatestatus(self,res):
 		d = res.json
-		if d["status"]=="ERRO":
+		if d["STATUS"]=="ERRO":
 			self.bloqueia.setmsg(d["msg"])
 			self.estadoHost.className=self.cssBotao
 			self.estadoHost.classList.add("w3-red")
@@ -265,7 +265,7 @@ class NodeInfo(html.DIV):
 				return
 		ajax.post("/hosts/%d"%self.hostid, data=json.dumps(dados), oncomplete=self.added, headers={"Content-Type": "application/json; charset=utf-8"})
 	def added(self,req):
-		if req.json["status"]!="OK":
+		if req.json["STATUS"]!="OK":
 			Alerta("Erro de atualização de Host","Erro")
 		self.carrega()
 	def cancelar(self, ev):
@@ -356,6 +356,8 @@ class EstadoVM(html.DIV):
 	def loadedHostVMs(self, req):
 
 		vmstatus = req.json
+		Alerta(str(req.json))
+		return
 
 		if vmstatus["STATUS"] != "OK":
 			Alerta(vmstatus["MSG"],"Erro")
@@ -396,7 +398,7 @@ class EstadoVM(html.DIV):
 
 	def vmLoaded(self,req):
 		vm = req.json["vm"]
-		if not req.json["status"]:
+		if not req.json["STATUS"]:
 			# alert("VM não encontrada, criando entrada no DB")
 			d = {"nome":vm, "tipo":"V", "hospedeiro":self.hostid}
 			if vm in self.estado["on"]: d["estado"]="1"
@@ -404,8 +406,11 @@ class EstadoVM(html.DIV):
 			else: d["estado"]="-1"
 			ajax.put("/vm/", data=json.dumps(d), oncomplete=self.vmAdded, headers={"Content-Type": "application/json; charset=utf-8"})
 	def vmAdded(self, req):
-		if req.json["status"]!="OK":
-			Alerta(req.json["status"])
+		if not 'STATUS' in req.json:
+			Alerta(str(req.json))
+			return
+		if req.json["STATUS"]!="OK":
+			Alerta(req.json["STATUS"])
 
 class TipoHost(html.DIV):
 	def __init__(self, h, mini=False):
@@ -539,8 +544,8 @@ class ListaInterfaces(html.DIV):
 	def getRelease(self,ev):
 		ajax.get("/vmhosts/%s/release"%ev.currentTarget.ip, oncomplete=self.dispRelease)
 	def dispRelease(self,req):
-		if req.json["status"]!="":
-			Alerta(req.json["status"])
+		if req.json["STATUS"]!="":
+			Alerta(req.json["STATUS"])
 		self.hostnode.kernel.setavalor(req.json["kernel"])
 		self.hostnode.kernel.classList.add( "w3-border")
 		self.hostnode.kernel.classList.add( "w3-border-red")
@@ -597,10 +602,10 @@ class AddNet(html.DIV):
 			"maq":self.maq, "ether":self.ether.value }
 		ajax.put("/netdev", data=json.dumps(d), oncomplete=self.added, headers={"Content-Type": "application/json; charset=utf-8"})
 	def added(self, req):
-		if req.json["status"]=="OK":
+		if req.json["STATUS"]=="OK":
 			Alerta("Interface adicionada","Rede")
 		else:
-			Alerta(req.json["status"])
+			Alerta(req.json["STATUS"])
 		NodeInfo(self.maq)
 	def show(self):
 		self.style.display = "block"

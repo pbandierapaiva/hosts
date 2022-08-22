@@ -62,7 +62,7 @@ async def hostinfoPowerStatus(hostid):
 	h = db.cursor.fetchone()
 
 	if not h:
-		o = {"hostid":hostid,"status":"ERRO", "msg":"Não encontrado no banco" }
+		o = {"hostid":hostid,"STATUS":"ERRO", "msg":"Não encontrado no banco" }
 		return JSONResponse(content=jsonable_encoder(o))
 	ip = h["ip"]
 	if h["altsec"]:
@@ -74,10 +74,10 @@ async def hostinfoPowerStatus(hostid):
 
 	o = {"hostid":hostid,"ip":ip}
 	if output.returncode==1:
-		o["status"]='ERRO'
+		o["STATUS"]='ERRO'
 		o["msg"]= output.stderr
 	else:
-		o["status"]='OK'
+		o["STATUS"]='OK'
 		mensagem = str(output.stdout).strip()
 		o["msg"]= mensagem
 		ultima = mensagem.split()[-1]
@@ -214,23 +214,23 @@ def vmhostlist(ip):
 
 @app.get("/vmhosts/{ip}/release")
 async def catrelease(ip):
-	ret = {'so':'','kernel':'','status':'OK'}
+	ret = {'so':'','kernel':'',"STATUS":'OK'}
 	client = SSHClient()
 	client.load_system_host_keys()
 	client.load_host_keys("/home/paiva/.ssh/known_hosts")
 	client.connect(ip,username='root',password=rootpw)
-	ret['status']=""
+	ret["STATUS"]=""
 	stdin, stdout, stderr = client.exec_command("cat /etc/system-release")
 	try:
 		ret['so'] = stdout.read()
 	except:
-		ret['status']+="SO: "+ str( stderr.read() )
+		ret["STATUS"]+="SO: "+ str( stderr.read() )
 
 	stdin, stdout, stderr = client.exec_command("uname -a")
 	try:
 		ret['kernel'] = stdout.read()   #.split(' ')[2]
 	except:
-		ret['status']+="Kernel " + str( stderr.read() )
+		ret["STATUS"]+="Kernel " + str( stderr.read() )
 
 	stdin, stdout, stderr = client.exec_command("grep 'model name' /proc/cpuinfo")
 	try:
@@ -239,14 +239,14 @@ async def catrelease(ip):
 		ret["n"] = len(li)
 		ret['cpu'] = li[0].split('\t: ')[1]
 	except:
-		ret['status']+="CPU " + str( stderr.read() )
+		ret["STATUS"]+="CPU " + str( stderr.read() )
 
 	stdin, stdout, stderr = client.exec_command("free -h | grep Mem:")
 	try:
 		li = stdout.readline()
 		ret["mem"] = " ".join(li.split()).split()[1]
 	except:
-		ret['status']+="CPU " + str( stderr.read() )
+		ret["STATUS"]+="CPU " + str( stderr.read() )
 	return JSONResponse(content=jsonable_encoder(ret))
 
 @app.put("/netdev")
@@ -263,17 +263,17 @@ async def criaNetDev( nd: NetDev):
 			except:
 				ipValido=False
 	if not ipValido:
-		return JSONResponse(content=jsonable_encoder({'status':'ERROR: invalid address'}))
+		return JSONResponse(content=jsonable_encoder({"STATUS":'ERROR: invalid address'}))
 	cmdins = "INSERT INTO netdev (ip,ether,rede,maq) VALUES ('%s','%s','%s',%d)"%(nd.ip,nd.ether,nd.rede,nd.maq)
 	db = DB()
 	try:
 		status = db.cursor.execute(cmdins)
 		db.commit()
 	except:
-		return JSONResponse(content=jsonable_encoder({'status':'ERROR: duplicate IP'}))
+		return JSONResponse(content=jsonable_encoder({"STATUS":'ERROR: duplicate IP'}))
 
 	# print(str(dir(db.cursor)))
-	return JSONResponse(content=jsonable_encoder({'status':'OK'}))
+	return JSONResponse(content=jsonable_encoder({"STATUS":'OK'}))
 
 @app.get("/hosts/{host_id}/vm")
 async def getVMInfo(host_id):
@@ -287,10 +287,10 @@ async def getVM(nome_vm):
 		db = DB()
 		db.cursor.execute("Select * from maq where tipo='V' AND nome='"+nome_vm+"'")
 		h = db.cursor.fetchone()
-		if not h: return JSONResponse(content=jsonable_encoder({"status":False,"vm":nome_vm}))
+		if not h: return JSONResponse(content=jsonable_encoder({"STATUS":False,"vm":nome_vm}))
 		db.cursor.execute("Select rede,ip from netdev where maq='"+str(h['id'])+"'")
 		interfaces = db.cursor.fetchall()
-		h['status'] = True
+		h["STATUS"] = True
 		h['redes'] = {}
 		for iface in interfaces:
 			h['redes'][iface["ip"]]=iface["rede"]
@@ -304,8 +304,8 @@ async def criaVM(i: HostInfo):
 		status = db.cursor.execute(inscmd)
 		db.commit()
 	except:
-		return JSONResponse(content=jsonable_encoder({'status':'ERROR: inserting into database'}))
-	return JSONResponse(content=jsonable_encoder({"data":i.hostid, "status":"OK"}))
+		return JSONResponse(content=jsonable_encoder({"STATUS":'ERROR: inserting into database'}))
+	return JSONResponse(content=jsonable_encoder({"data":i.hostid, "STATUS":"OK"}))
 
 @app.post("/hosts/{host_id}/status/{status}")
 async def estadoHost(host_id, status):
@@ -323,7 +323,7 @@ async def estadoHost(host_id, status):
 		db.commit()
 	except Exception as ex:
 		return JSONResponse(content=jsonable_encoder({'STATUS':'ERROR', 'MSG':ex.args}))
-	return JSONResponse(content=jsonable_encoder({"status":"OK"}))
+	return JSONResponse(content=jsonable_encoder({"STATUS":"OK"}))
 
 @app.post("/hosts/{host_id}/tipo/{tipo}")
 async def tipoMaq(host_id, tipo):
@@ -336,7 +336,7 @@ async def tipoMaq(host_id, tipo):
 		db.commit()
 	except Exception as ex:
 		return JSONResponse(content=jsonable_encoder({'STATUS':'ERROR', 'MSG':ex.args}))
-	return JSONResponse(content=jsonable_encoder({"status":"OK"}))
+	return JSONResponse(content=jsonable_encoder({"STATUS":"OK"}))
 
 
 @app.get("/hosts/{hostid}/ambient")
@@ -347,7 +347,7 @@ async def hostinfoPowerStatus(hostid):
 	h = db.cursor.fetchone()
 
 	if not h:
-		o = {"hostid":hostid,"status":"ERRO", "msg":"Não encontrado no banco" }
+		o = {"hostid":hostid,"STATUS":"ERRO", "msg":"Não encontrado no banco" }
 		return JSONResponse(content=jsonable_encoder(o))
 	ip = h["ip"]
 	if h["altsec"]:
@@ -360,10 +360,10 @@ async def hostinfoPowerStatus(hostid):
 	output.wait(timeout=180)
 	o = {"hostid":hostid,"ip":ip}
 	if output.returncode==1:
-		o["status"]='ERRO'
+		o["STATUS"]='ERRO'
 		o["msg"]= output.stderr
 	else:
-		o["status"]='OK'
+		o["STATUS"]='OK'
 		mensagem="<pre>"
 		for i in output.stdout:
 			mensagem += str(output.stdout)
@@ -388,5 +388,5 @@ async def atualizaHost(item: HostInfo):
 			status = db.cursor.execute(cmdupd)
 			db.commit()
 		except:
-			return JSONResponse(content=jsonable_encoder({'status':'ERROR: updating database'}))
-		return JSONResponse(content=jsonable_encoder({"data":item.hostid, "status":"OK"}))
+			return JSONResponse(content=jsonable_encoder({"STATUS":'ERROR: updating database'}))
+		return JSONResponse(content=jsonable_encoder({"data":item.hostid, "STATUS":"OK"}))
