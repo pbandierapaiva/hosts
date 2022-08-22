@@ -52,7 +52,6 @@ class Rack( html.DIV ):
 		self <= Unidade(1, [Modulo(self.hd[564])])
 		self <= Unidade(2, [Modulo(self.hd[566])])
 
-
 class Unidade(html.DIV ):
     def __init__(self, h, mods):
         html.DIV.__init__(self, Class="w3-bar-item w3-button")  #"w3-container w3-row")

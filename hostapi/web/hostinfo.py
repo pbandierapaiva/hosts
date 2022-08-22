@@ -29,7 +29,6 @@ class HostList(html.DIV):
 		document["infoarea"].innerHTML=""
 		document["infoarea"] <= VMHostList()
 
-
 class HostLine(html.DIV):
 	def __init__(self, h, refreshState=False):
 		html.DIV.__init__(self, Class= "w3-bar w3-block")
@@ -275,7 +274,6 @@ class NodeInfo(html.DIV):
 		else:
 			self.carrega()
 
-
 class NodeInfoLine(html.DIV):
 	def __init__(self, hinfodic):
 		html.DIV.__init__(self, Class="w3-card w3-margin") #, style={"width":"40%"})
@@ -292,11 +290,10 @@ class NodeInfoLine(html.DIV):
 		else:
 			bot.classList.add("w3-yellow")
 		base <= bot
-		self <= base
-#		if nid:	ajax.get("/hosts/"+str(nid),oncomplete=self.onHostInfoLoaded)
+		self <= base 
+		#		if nid:	ajax.get("/hosts/"+str(nid),oncomplete=self.onHostInfoLoaded)
 	def onHostInfoLoaded(self, response):
 		resp = response.json
-
 
 class EstadoVM(html.DIV):
 	def __init__(self, hostinfo):

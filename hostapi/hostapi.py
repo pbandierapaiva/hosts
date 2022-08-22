@@ -87,6 +87,27 @@ async def hostinfoPowerStatus(hostid):
 			o["power"]= "0"
 	return JSONResponse(content=jsonable_encoder(o))
 
+@app.get("/hosts/{hostid}/temp")
+async def hostinfoPowerStatus(hostid):
+	db = DB()
+
+	db.cursor.execute("Select netdev.ip, maq.altsec from maq,netdev where maq.id=netdev.maq AND maq.id='"+hostid+"' AND netdev.rede='ipmi'")
+	h = db.cursor.fetchone()
+
+	if not h:
+		o = {"hostid":hostid,"STATUS":"ERRO", "msg":"Não encontrado no banco" }
+		return JSONResponse(content=jsonable_encoder(o))
+	ip = h["ip"]
+
+	if h["altsec"]:
+		pw = h["altsec"]
+	else:
+		pw = rootpw
+	executa = ['ipmi-sensors','-h', ip, '-u', 'admin', '-p', pw, "-r","138"]
+
+	output = subprocess.run(executa, capture_output=True, text=True		)
+	return JSONResponse(content=jsonable_encoder(output))
+
 @app.put("/hosts/{hostid}/powerstatus/{estado}")
 async def hostinfoPowerStatus(hostid,estado):
 	db = DB()
