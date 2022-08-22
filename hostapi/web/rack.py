@@ -63,8 +63,8 @@ class Unidade(html.DIV ):
         self.style = { "height":"%dpx"%(UHEIGHT*h), "width": RWIDTH}
 
         if type(mods)==str:
-			self<= Modulo(mods)
-        elif len(self.mods)==1:
+            self<= Modulo(mods)
+        elif len(self.mods)==1:    
             self<=  self.mods[0]
         elif len(self.mods)==4:
             cel1 = html.DIV(Class="w3-half")
