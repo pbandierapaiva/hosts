@@ -535,7 +535,7 @@ class ListaInterfaces(html.DIV):
 	def netdevRemove(self, ev):
 		ip = ev.currentTarget.ip
 		Confirma("ATENÇÃO: Remover interface "+ip+ "?", self.netdevRemoveConfirm)
-	def netdevRemoveConfirm(self, ev):
+	def netdevRemoveConfirm(self):
 		ajax.delete("/netdev/%s"%ip, oncomplete=self.netdevRemovedOK)
 	def netdevRemovedOK(self, ev):
 		NodeInfo(self.hid)
