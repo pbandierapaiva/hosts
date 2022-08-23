@@ -508,8 +508,9 @@ class ListaInterfaces(html.DIV):
 			iDd.style = {"pointer-events": "auto"}
 
 	def netdevRemove(self, ev):
-		if confirm("ATENÇÃO: Remover interface "+ev.currentTarget.ip+ "?"):
-			ajax.delete("/netdev/%s"%(ev.currentTarget.innerHTML))
+		ip = ev.currentTarget.ip
+		if confirm("ATENÇÃO: Remover interface "+ip+ "?"):
+			ajax.delete("/netdev/%s"%ip)
 			InfoDialog("Status","Interface removida")
 		NodeInfo(self.hid)
 		#document["infoarea"].innerHTML= ""
