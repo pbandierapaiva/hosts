@@ -264,7 +264,7 @@ class NodeInfo(html.DIV):
 				return
 		ajax.post("/hosts/%d"%self.hostid, data=json.dumps(dados), oncomplete=self.added, headers={"Content-Type": "application/json; charset=utf-8"})
 	def added(self,req):
-		if req.json["status"]!="OK":
+		if req.json["STATUS"]!="OK":
 			Alerta("Erro de atualização de Host","Erro")
 		self.carrega()
 	def cancelar(self, ev):
