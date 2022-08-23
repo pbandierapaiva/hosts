@@ -535,10 +535,10 @@ class ListaInterfaces(html.DIV):
 	def netdevRemove(self, ev):
 		ip = ev.currentTarget.ip
 		if confirm("ATENÇÃO: Remover interface "+ip+ "?"):
-			ajax.delete("/netdev/%s"%ip, self.netdevRemoveConfirm)
+			ajax.delete("/netdev/%s"%ip, ondelete=self.netdevRemoveConfirm)
 			# InfoDialog("Status","Interface removida")
 	def netdevRemoveConfirm(self, ev):
-		document["infoarea"].innerHTML= ""		
+		# document["infoarea"].innerHTML= ""		
 		NodeInfo(self.hid)
 		#document["infoarea"].innerHTML= ""
 	def getRelease(self,ev):
