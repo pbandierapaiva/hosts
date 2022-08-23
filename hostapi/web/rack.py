@@ -52,7 +52,6 @@ class Rack( html.DIV ):
 		self <= Unidade(1, [Modulo(self.hd[564])])
 		self <= Unidade(2, [Modulo(self.hd[566])])
 
-
 class Unidade(html.DIV ):
     def __init__(self, h, mods):
         html.DIV.__init__(self, Class="w3-bar-item w3-button")  #"w3-container w3-row")
@@ -63,8 +62,8 @@ class Unidade(html.DIV ):
         self.style = { "height":"%dpx"%(UHEIGHT*h), "width": RWIDTH}
 
         if type(mods)==str:
-			self<= Modulo(mods)
-        elif len(self.mods)==1:
+            self<= Modulo(mods)
+        elif len(self.mods)==1:    
             self<=  self.mods[0]
         elif len(self.mods)==4:
             cel1 = html.DIV(Class="w3-half")
@@ -95,7 +94,10 @@ class Modulo(html.DIV):
 		self.innerHTML = str(self.h["id"]) + " - " + self.h["nome"]
 		self.classList.add("w3-hover-blue")
 		if self.h["estado"]=='1':
-		    self.classList.add("w3-green")
+			if self.h["tipo"]=='H':
+		    	self.classList.add("w3-blue")
+			else:
+				self.classList.add("w3-cyan")
 		elif  self.h["estado"]=='-1':
 		    self.classList.add("w3-yellow")
 		self.bind("click", self.mostraHost)

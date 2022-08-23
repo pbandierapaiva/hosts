@@ -29,7 +29,6 @@ class HostList(html.DIV):
 		document["infoarea"].innerHTML=""
 		document["infoarea"] <= VMHostList()
 
-
 class HostLine(html.DIV):
 	def __init__(self, h, refreshState=False):
 		html.DIV.__init__(self, Class= "w3-bar w3-block")
@@ -91,7 +90,7 @@ class HostLine(html.DIV):
 
 	def updatestatus(self,res):
 		d = res.json
-		if d["status"]=="ERRO":
+		if d["STATUS"]=="ERRO":
 			self.bloqueia.setmsg(d["msg"])
 			self.estadoHost.className=self.cssBotao
 			self.estadoHost.classList.add("w3-red")
@@ -232,7 +231,8 @@ class NodeInfo(html.DIV):
 		self.mem.enable()
 
 		self.estado.enable()
-		self.tipo.disabled = False
+		# self.tipo.disabled = False
+		self.tipo.enableEdit()
 		self.listaInt.enableEdit()
 
 		self.editBtn.innerHTML = "Salvar"
@@ -274,7 +274,6 @@ class NodeInfo(html.DIV):
 		else:
 			self.carrega()
 
-
 class NodeInfoLine(html.DIV):
 	def __init__(self, hinfodic):
 		html.DIV.__init__(self, Class="w3-card w3-margin") #, style={"width":"40%"})
@@ -291,11 +290,10 @@ class NodeInfoLine(html.DIV):
 		else:
 			bot.classList.add("w3-yellow")
 		base <= bot
-		self <= base
-#		if nid:	ajax.get("/hosts/"+str(nid),oncomplete=self.onHostInfoLoaded)
+		self <= base 
+		#		if nid:	ajax.get("/hosts/"+str(nid),oncomplete=self.onHostInfoLoaded)
 	def onHostInfoLoaded(self, response):
 		resp = response.json
-
 
 class EstadoVM(html.DIV):
 	def __init__(self, hostinfo):
@@ -355,6 +353,8 @@ class EstadoVM(html.DIV):
 	def loadedHostVMs(self, req):
 
 		vmstatus = req.json
+		Alerta(str(req.json))
+		return
 
 		if vmstatus["STATUS"] != "OK":
 			Alerta(vmstatus["MSG"],"Erro")
@@ -373,11 +373,11 @@ class EstadoVM(html.DIV):
 
 		for rvm in self.vms:
 			if rvm["estado"]!="1" and rvm["nome"] in vmstatus["on"]:
-					ajax.post("/hosts/%s/on"%(rvm["id"]), oncomplete=self.statusChangeResult)
+					ajax.post("/hosts/%s/status/on"%(rvm["id"]), oncomplete=self.statusChangeResult)
 			if rvm["estado"]!="0" and rvm["nome"] in vmstatus["off"]:
-					ajax.post("/hosts/%s/off"%(rvm["id"]), oncomplete=self.statusChangeResult)
+					ajax.post("/hosts/%s/status/off"%(rvm["id"]), oncomplete=self.statusChangeResult)
 			if rvm["estado"]!="-1" and rvm["nome"] in vmstatus["other"]:
-					ajax.post("/hosts/%s/other"%(rvm["id"]), oncomplete=self.statusChangeResult)
+					ajax.post("/hosts/%s/status/other"%(rvm["id"]), oncomplete=self.statusChangeResult)
 
 		adefinir = liall - rvmall
 		for n in adefinir: # máquinas definidas nos servidores mas não no BD
@@ -395,7 +395,7 @@ class EstadoVM(html.DIV):
 
 	def vmLoaded(self,req):
 		vm = req.json["vm"]
-		if not req.json["status"]:
+		if not req.json["STATUS"]:
 			# alert("VM não encontrada, criando entrada no DB")
 			d = {"nome":vm, "tipo":"V", "hospedeiro":self.hostid}
 			if vm in self.estado["on"]: d["estado"]="1"
@@ -403,8 +403,11 @@ class EstadoVM(html.DIV):
 			else: d["estado"]="-1"
 			ajax.put("/vm/", data=json.dumps(d), oncomplete=self.vmAdded, headers={"Content-Type": "application/json; charset=utf-8"})
 	def vmAdded(self, req):
-		if req.json["status"]!="OK":
-			Alerta(req.json["status"])
+		if not 'STATUS' in req.json:
+			Alerta(str(req.json))
+			return
+		if req.json["STATUS"]!="OK":
+			Alerta(req.json["STATUS"])
 
 class TipoHost(html.DIV):
 	def __init__(self, h, mini=False):
@@ -413,7 +416,7 @@ class TipoHost(html.DIV):
 			self.style = {"width":"10%"}
 			self.classList = "w3-button w3-tiny w3-center w3-padding-small w3-border w3-round"
 		else:
-			self.classList = "w3-tag w3-margin w3-padding"
+			self.classList = "w3-tag w3-margin w3-padding w3-dropdown-hover"
 			self.style = {"width":"200px"}
 		self.disabled = True
 		self.hostinfo = h
@@ -424,11 +427,11 @@ class TipoHost(html.DIV):
 			if self.hostinfo["estado"]=='1':
 				self.classList.add("w3-blue")
 			else: self.classList.add("w3-grey")
-			self.bind("click",self.vmstate)
+			# self.bind("click",self.vmstate)
 		elif self.tipo=="S":  # Standalone
 			if mini:self.innerHTML = "S"
 			else:self.innerHTML = "Standalone"
-			self.classList.add("w3-teal")
+			self.classList.add("w3-cyan")
 		elif self.tipo=="V":  # Máq. virtual
 			if mini:self.innerHTML = "V"
 			else:self.innerHTML = "VM"
@@ -437,11 +440,33 @@ class TipoHost(html.DIV):
 			if mini:self.innerHTML = "??"
 			else:self.innerHTML = "desconhecido"
 			self.classList.add("w3-grey")
+
+		if not mini:
+			setH = html.A(Class="w3-bar-item w3-button")
+			setH.innerHTML="Host"
+			setH.bind("click", self.seth)
+
+			setS = html.A(Class="w3-bar-item w3-button")
+			setS.innerHTML="Standalone"
+			setS.bind("click", self.sets)
+
+			# self.dropdown =  html.DIV(Class="w3-dropdown-hover")
+			# dropdown <= self
+			dropdownitems = html.DIV(Class="w3-dropdown-content w3-bar-block w3-card-4")
+			dropdownitems <= setH
+			dropdownitems <= setS
+			self <= dropdownitems
+			self.style = {"pointer-events": "none"}
+
+			# self <= self.dropdown
+	def sets(self, ev):
+		ajax.post("/hosts/%s/tipo/S"%self.hostinfo["id"])
+	def seth(self, ev):
+		ajax.post("/hosts/%s/tipo/H"%self.hostinfo["id"])
 	def valor(self):
 		return self.tipo
-	def vmstate(self,ev):
-		document["infoarea"].innerHTML=""
-		document["infoarea"] <= EstadoVM(self.hostinfo)
+	def enableEdit(self):
+		self.style = {"pointer-events": "auto"}
 
 class ListaInterfaces(html.DIV):
 	def __init__(self, hostnode):     #loc, h):
@@ -517,8 +542,8 @@ class ListaInterfaces(html.DIV):
 	def getRelease(self,ev):
 		ajax.get("/vmhosts/%s/release"%ev.currentTarget.ip, oncomplete=self.dispRelease)
 	def dispRelease(self,req):
-		if req.json["status"]!="":
-			Alerta(req.json["status"])
+		if req.json["STATUS"]!="":
+			Alerta(req.json["STATUS"])
 		self.hostnode.kernel.setavalor(req.json["kernel"])
 		self.hostnode.kernel.classList.add( "w3-border")
 		self.hostnode.kernel.classList.add( "w3-border-red")
@@ -575,10 +600,10 @@ class AddNet(html.DIV):
 			"maq":self.maq, "ether":self.ether.value }
 		ajax.put("/netdev", data=json.dumps(d), oncomplete=self.added, headers={"Content-Type": "application/json; charset=utf-8"})
 	def added(self, req):
-		if req.json["status"]=="OK":
+		if req.json["STATUS"]=="OK":
 			Alerta("Interface adicionada","Rede")
 		else:
-			Alerta(req.json["status"])
+			Alerta(req.json["STATUS"])
 		NodeInfo(self.maq)
 	def show(self):
 		self.style.display = "block"
