@@ -49,7 +49,6 @@ class HostInfo(BaseModel):
 	n: Optional[int]
 	mem: Optional[int]
 
-
 @app.get("/")
 async def root():
     return RedirectResponse("/web/host.html")
