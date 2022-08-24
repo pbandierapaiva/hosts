@@ -343,14 +343,14 @@ class EstadoVM(html.DIV):
 		for ip in self.ips:
 			Alerta("Checando IP: "+ip)
 			self.submeteGetLVMs(ip)
-			if self.sucessoLVMs:
-				Alerta("nada").dismiss()
-				break
+			# if self.sucessoLVMs:
+			# 	Alerta("nada").dismiss()
+			# 	break
 	def submeteGetLVMs(self, ip):
 		ajax.get("/vmhosts/%s"%ip, oncomplete=self.loadedHostVMs)
 	def loadedHostVMs(self, req):
 		vmstatus = req.json
-		Alerta(str(req.json))
+		# Alerta(str(req.json))
 		if vmstatus["STATUS"] != "OK":
 			Alerta(vmstatus["MSG"],"Erro")
 			return
