@@ -346,22 +346,15 @@ class EstadoVM(html.DIV):
 			if self.sucessoLVMs:
 				Alerta("nada").dismiss()
 				break
-
 	def submeteGetLVMs(self, ip):
 		ajax.get("/vmhosts/%s"%ip, oncomplete=self.loadedHostVMs)
-
 	def loadedHostVMs(self, req):
-
 		vmstatus = req.json
 		Alerta(str(req.json))
-		return
-
 		if vmstatus["STATUS"] != "OK":
 			Alerta(vmstatus["MSG"],"Erro")
 			return
-
 		self.sucessoLVMs = True
-
 		liall = set( vmstatus["all"])
 		lirvmall= []
 		for vmreg in self.vms:
