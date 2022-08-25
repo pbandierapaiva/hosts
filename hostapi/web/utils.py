@@ -92,16 +92,20 @@ class RadioEstado(html.DIV):
 			html.DIV.__init__(self)
 			self.estado = estado
 			self.alterado = False
-			self.estadoON = html.INPUT(name='restado', value="1",type = "radio", Class = "w3-radio")
+			self.estadoON = html.INPUT(name='restado', value="1",type = "radio")
 			self.estadoON.disabled = True
 			if( self.estado=="1" ):  self.estadoON.checked = True
-			self <= self.estadoON
-			self <= html.LABEL("ON<br>")
-			self.estadoOFF = html.INPUT(name='restado', value="0", type = "radio", Class = "w3-radio")
+			# self <= self.estadoON
+			labON = html.LABEL("ON", Class = "radio-inline")
+			labON <= self.estadoON
+			self <= labON 
+			self.estadoOFF = html.INPUT(name='restado', value="0", type = "radio")
 			if( self.estado=="0" ): self.estadoOFF.checked = True
 			self.estadoOFF.disabled = True
-			self <=  self.estadoOFF
-			self <= html.LABEL("OFF")
+			# self <=  self.estadoOFF
+			labOFF = html.LABEL(" OFF", Class = "radio-inline") 
+			labOFF <=  self.estadoOFF
+			self <= labOFF
 			self.estadoOFF.bind("change",self.onChange)
 			self.estadoON.bind("change",self.onChange)
 		def enable(self):
