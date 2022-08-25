@@ -8,26 +8,44 @@ from utils import *
 
 import json
 
-class HostList(html.DIV):
-	def __init__(self, refreshState=False):
-		html.DIV.__init__(self)
-		ajax.get("/hosts", oncomplete=self.onLoadHosts)
-		self.refreshState = refreshState
-		self.className = "w3-sidebar w3-light-grey w3-bar-block"
-		self.style={"width":"25%"}
-		titulo = html.H3("Hosts")
-		titulo.className = "w3-bar-item"
-		self <= titulo
 
-		vmButton = html.DIV("Lista VM Hosts", Class="w3-btn w3-block")
-		vmButton.bind("click",self.vmlist)
-		self <= vmButton
-	def onLoadHosts(self, req):
-		for h in req.json:
-			self <= HostLine(h)
-	def vmlist(self,ev):
-		document["infoarea"].innerHTML=""
-		document["infoarea"] <= VMHostList()
+# class HostList(html.DIV):
+# 	def __init__(self, refreshState=False):
+# 		html.DIV.__init__(self)
+# 		ajax.get("/hosts", oncomplete=self.onLoadHosts)
+# 		self.refreshState = refreshState
+# 		self.className = "w3-sidebar w3-light-grey w3-bar-block"
+# 		self.style={"width":"25%"}
+# 		titulo = html.H3("Hosts")
+# 		titulo.className = "w3-bar-item"
+# 		self <= titulo
+
+# 		vmButton = html.DIV("Lista VM Hosts", Class="w3-btn w3-block")
+# 		vmButton.bind("click",self.vmlist)
+# 		self <= vmButton
+# 	def onLoadHosts(self, req):
+# 		for h in req.json:
+# 			self <= HostLine(h)
+# 	def vmlist(self,ev):
+# 		document["infoarea"].innerHTML=""
+# 		document["infoarea"] <= VMHostList()
+# class VMHostList(html.DIV):
+# 	def __init__(self):
+# 		html.DIV.__init__(self)
+# 		Confirma("Certeza que deseja listar todos os hosts?", self.refresh)
+
+# 	def refresh(self):
+# 		ajax.get("/hosts", oncomplete=self.onLoadHosts)
+
+# 	def onLoadHosts(self, req):
+# 		for h in req.json:
+# 			linhaHost = html.DIV()
+# 			linhaHost.className = "w3-bar w3-block"
+# 			self <= HostLine(h)  #html.P(h["nome"])
+
+# 			if h["tipo"]!="H":
+# 				next
+# 			self <= EstadoVM(h)
 
 class HostLine(html.DIV):
 	def __init__(self, h, refreshState=False):
@@ -81,13 +99,11 @@ class HostLine(html.DIV):
 		self <= botContain
 		self <= tagTipo
 		self <= self.estadoHost
-
 	def refrescastat(self, ev):
 		ajax.get("/hosts/"+str(self.hostdic["id"])+"/powerstatus",oncomplete=self.updatestatus)
 		self.bloqueia = Alerta("Aguarde a conexão com o Host")
 		self.estadoHost.className=self.cssBotao
 		self.estadoHost.classList.add("w3-yellow")
-
 	def updatestatus(self,res):
 		d = res.json
 		if d["STATUS"]=="ERRO":
@@ -122,57 +138,41 @@ class HostLine(html.DIV):
 		document["infoarea"].innerHTML=""
 		document["infoarea"] <= EstadoVM(ev.currentTarget.hostinfo)
 
-class VMHostList(html.DIV):
-	def __init__(self):
-		html.DIV.__init__(self)
-		Confirma("Certeza que deseja listar todos os hosts?", self.refresh)
-
-	def refresh(self):
-		ajax.get("/hosts", oncomplete=self.onLoadHosts)
-
-	def onLoadHosts(self, req):
-		for h in req.json:
-			linhaHost = html.DIV()
-			linhaHost.className = "w3-bar w3-block"
-			self <= HostLine(h)  #html.P(h["nome"])
-
-			if h["tipo"]!="H":
-				next
-			self <= EstadoVM(h)
-
 class NodeInfo(html.DIV):
 	def __init__(self, h):
 		html.DIV.__init__(self)
 		document["infoarea"].innerHTML=""
 		document["infoarea"] <= self
-
 		if type(h)==int:
-			self.hostid = h
-			self.loc = "/hosts/"+str(h)
-			self.carrega()
+			ajax.get("/hosts/"+str(h), oncomplete=self.onLoadInfo)
+			self.clear()
 		else:
-			self.hostid = h["id"]
-			self.loc = "/hosts/"+str(h["id"])
-			self.onLoadInfo(h)
-	def carrega(self):
-		ajax.get(self.loc, oncomplete=self.onLoadInfo)
-		self.clear()
-
+			Alerta("Esse objeto não suporta mais não inteiros")
+	# 	if type(h)==int:
+	# 		self.hostid = h
+	# 		self.loc = "/hosts/"+str(h)
+	# 		self.carrega()
+	# 	else:
+	# 		self.hostid = h["id"]
+	# 		self.loc = "/hosts/"+str(h["id"])
+	# 		self.onLoadInfo(h)
+	# def carrega(self):
+	# 	ajax.get(self.loc, oncomplete=self.onLoadInfo)
+	# 	self.clear()
 	def onLoadInfo(self, req):
-		if type(req)==dict:
-			self.dadoshost=req
-		else:
-			self.dadoshost = req.json
+		# if type(req)==dict:
+		# 	self.dadoshost=req
+		# else:
+			# self.dadoshost = req.json
+
 		#
 		# tit = document["hititle"]
 		# tit.innerHTML = "Host info: "+self.dadoshost["nome"]
-
+		self.dadoshost = req.json
 		form = html.FORM()
 		form.className = "w3-container"
 		titulo = html.LABEL("<h2>ID: "+str(self.dadoshost["id"])+" - "+self.dadoshost["nome"]+"</n2>")
 		form <= titulo
-
-
 		form <= HostLine(self.dadoshost)
 		self.nome = EntraTexto("Nome",self.dadoshost["nome"])
 		form <= self.nome
@@ -182,7 +182,6 @@ class NodeInfo(html.DIV):
 		form <= self.cposo
 		self.kernel = EntraTexto("Kernel",self.dadoshost["kernel"])
 		form <= self.kernel
-
 		self.cpu = EntraTexto("Processador",self.dadoshost["cpu"]) #, width="70%")
 		self.n = EntraTexto("N",self.dadoshost["n"]) #, width="30%")
 		self.mem = EntraTexto("Memória",self.dadoshost["mem"])  #, width="30%")
@@ -191,7 +190,6 @@ class NodeInfo(html.DIV):
 		cpulinha <= html.TD(style={"width":"10%"}) <= self.n
 		cpulinha <= html.TD(style={"width":"20%"}) <= self.mem
 		form <= html.TABLE() <= cpulinha
-
 		self.tipo = TipoHost(self.dadoshost)
 		self.estado = RadioEstado(self.dadoshost["estado"])
 
@@ -291,9 +289,6 @@ class NodeInfoLine(html.DIV):
 			bot.classList.add("w3-yellow")
 		base <= bot
 		self <= base 
-		#		if nid:	ajax.get("/hosts/"+str(nid),oncomplete=self.onHostInfoLoaded)
-	def onHostInfoLoaded(self, response):
-		resp = response.json
 
 class EstadoVM(html.DIV):
 	def __init__(self, hostinfo):
@@ -320,7 +315,6 @@ class EstadoVM(html.DIV):
 		ajax.get("/hosts/%s/vm"%self.hostid, oncomplete=self.onLoadRegisteredVMs)
 	def onLoadRegisteredVMs(self,res):
 		self.vms = res.json
-		# alert(str(self.vms))
 		for vm in self.vms:
 			if vm["estado"]=='1':
 				self <= NodeInfoLine(vm)
@@ -337,22 +331,15 @@ class EstadoVM(html.DIV):
 		self.rev.className="fa fa-hourglass"
 		self.sucessoLVMs = False
 		if len(self.ips)<=0:
-		# if self.ip=="":
 			Alerta("IP não cadastrado","Erro")
 			return
 		for ip in self.ips:
 			Alerta("Checando IP: "+ip)
-			self.submeteGetLVMs(ip)
-			# if self.sucessoLVMs:
-			# 	Alerta("nada").dismiss()
-			# 	break
-	def submeteGetLVMs(self, ip):
-		ajax.get("/vmhosts/%s"%ip, oncomplete=self.loadedHostVMs)
+			ajax.get("/vmhosts/%s"%ip, oncomplete=self.loadedHostVMs)
 	def loadedHostVMs(self, req):
 		vmstatus = req.json
-		# Alerta(str(req.json))
 		if vmstatus["STATUS"] != "OK":
-			Alerta(vmstatus["MSG"],"Erro")
+			Alerta("ERRO: " + vmstatus["MSG"],"Erro")
 			return
 		self.sucessoLVMs = True
 		liall = set( vmstatus["all"])
@@ -433,7 +420,6 @@ class TipoHost(html.DIV):
 			if mini:self.innerHTML = "??"
 			else:self.innerHTML = "desconhecido"
 			self.classList.add("w3-grey")
-
 		if not mini:
 			setH = html.A(Class="w3-bar-item w3-button")
 			setH.innerHTML="Host"
@@ -442,16 +428,11 @@ class TipoHost(html.DIV):
 			setS = html.A(Class="w3-bar-item w3-button")
 			setS.innerHTML="Standalone"
 			setS.bind("click", self.sets)
-
-			# self.dropdown =  html.DIV(Class="w3-dropdown-hover")
-			# dropdown <= self
 			dropdownitems = html.DIV(Class="w3-dropdown-content w3-bar-block w3-card-4")
 			dropdownitems <= setH
 			dropdownitems <= setS
 			self <= dropdownitems
 			self.style = {"pointer-events": "none"}
-
-			# self <= self.dropdown
 	def sets(self, ev):
 		ajax.post("/hosts/%s/tipo/S"%self.hostinfo["id"])
 	def seth(self, ev):
